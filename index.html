@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#060913" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <script>
+    try {
+      document.querySelector('meta[name="color-scheme"]').content = localStorage.getItem("color-scheme") ?? "light dark";
+    } catch (e) {}
+  </script>
+  <title>Prompt Mühendisliği Akademisi — iOS 27 Liquid Glass Etkileşimli Kurs</title>
+  <meta name="description" content="BTK Akademi Prompt Mühendisliği Kursu + Tepkime Arenası, Kimyasal Olay Yeri Uzmanı ve Bir Tepkimenin Üç Yüzü örnekleriyle zenginleştirilmiş iOS 27 Sıvı Cam eğitim platformu." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- iOS 27 Ambient Liquid Mesh Background -->
+  <div class="liquid-ambient-stage" aria-hidden="true">
+    <div class="liquid-blob blob-1"></div>
+    <div class="liquid-blob blob-2"></div>
+    <div class="liquid-blob blob-3"></div>
+    <div class="liquid-blob blob-4"></div>
+  </div>
+
+  <!-- iOS 27 Dynamic Island Header -->
+  <header class="top-island-bar">
+    <div class="dynamic-island" role="banner">
+      <div class="island-brand" onclick="window.selectModule(0)" title="Başlangıç Adımına Dön">
+        <div class="island-orb" aria-hidden="true">✦</div>
+        <div class="island-title-wrap">
+          <div class="island-title">
+            <span>Prompt Akademisi</span>
+            <span class="ios-badge">iOS 27 Liquid</span>
+          </div>
+          <span class="island-subtitle">BTK Müfredatı + Tepkime Arenası • Olay Yeri • Üç Yüz</span>
+        </div>
+      </div>
+
+      <!-- Live Telemetry & Progress Ring -->
+      <div class="island-telemetry" aria-label="Öğrenme İlerlemesi">
+        <div class="ring-wrapper">
+          <progress id="course-progress-ring" value="0" max="100" aria-label="Kurs tamamlanma yüzdesi" class="progress-ring"></progress>
+          <div id="course-progress-text" class="ring-content">0%</div>
+        </div>
+        <div class="telemetry-pill">
+          <span>⚡</span>
+          <span id="telemetry-xp" class="xp-num">0 XP</span>
+        </div>
+        <div class="telemetry-pill steps-pill">
+          <span>🎯</span>
+          <span id="telemetry-steps" class="streak-num">0/11 Adım</span>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="island-actions">
+        <button class="liquid-icon-btn hide-on-mobile" onclick="window.switchMode('studyo')" title="Canlı Prompt Stüdyosu">
+          <span>🧪</span>
+          <span>Stüdyo</span>
+        </button>
+        <button class="liquid-icon-btn hide-on-mobile" onclick="window.switchMode('sozluk')" title="3D Terimler Sözlüğü Kartları">
+          <span>🗂️</span>
+          <span>Sözlük</span>
+        </button>
+        <button class="liquid-icon-btn" onclick="window.toggleThemeMode()" aria-label="Tema görünümünü değiştir" title="Açık / Koyu Sıvı Cam Modu">
+          <span>🌗</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Slide-Up Drawer Backdrop -->
+  <div id="mobile-drawer-backdrop" class="mobile-drawer-backdrop" onclick="window.closeMobileDrawer()"></div>
+
+  <!-- Main Workspace Layout -->
+  <div class="app-shell">
+    <!-- Left Sidebar / Mobile Slide-Up Sheet: Step-by-Step Curriculum Map -->
+    <aside id="curriculum-sidebar" class="liquid-glass curriculum-sidebar" aria-label="Eğitim Müfredatı">
+      <div class="sidebar-header">
+        <h2>🧭 Eğitim Haritası (11 Adım)</h2>
+        <button class="drawer-close-btn" onclick="window.closeMobileDrawer()" aria-label="Menüyü kapat">✕</button>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="mode-tabs" role="tablist" aria-label="Çalışma Modları">
+        <button class="mode-tab active" data-mode="ders" onclick="window.switchMode('ders')" role="tab">📚 Ders</button>
+        <button class="mode-tab" data-mode="studyo" onclick="window.switchMode('studyo')" role="tab">🧪 Stüdyo</button>
+        <button class="mode-tab" data-mode="sozluk" onclick="window.switchMode('sozluk')" role="tab">🗂️ Sözlük</button>
+        <button class="mode-tab" data-mode="sinav" onclick="window.switchMode('sinav')" role="tab">🏆 Sınav</button>
+      </div>
+
+      <!-- Instant Search -->
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input type="search" id="sidebar-search" placeholder="Konu, şablon veya proje ara..." aria-label="Modüllerde ara" />
+      </div>
+
+      <!-- 11 Step-by-Step Modules List -->
+      <div id="module-nav-list" class="module-nav-list" role="navigation" aria-label="11 Adımlık Müfredat"></div>
+    </aside>
+
+    <!-- Main Interactive Stage -->
+    <main id="main-stage" class="main-stage" role="main"></main>
+  </div>
+
+  <!-- iOS 27 Mobile Bottom Dock Bar (Thumb-Friendly Phone Navigation) -->
+  <nav class="mobile-bottom-dock" aria-label="Mobil Alt Menü">
+    <button class="dock-btn active" data-dock="ders" onclick="window.switchMode('ders')">
+      <span class="dock-icon">📚</span>
+      <span>Ders</span>
+    </button>
+    <button class="dock-btn" data-dock="adimlar" onclick="window.toggleMobileDrawer()">
+      <span class="dock-icon">🧭</span>
+      <span id="mobile-dock-step-label">Adım 1/11</span>
+    </button>
+    <button class="dock-btn" data-dock="studyo" onclick="window.switchMode('studyo')">
+      <span class="dock-icon">🧪</span>
+      <span>Stüdyo</span>
+    </button>
+    <button class="dock-btn" data-dock="sozluk" onclick="window.switchMode('sozluk')">
+      <span class="dock-icon">🗂️</span>
+      <span>Sözlük</span>
+    </button>
+    <button class="dock-btn" data-dock="sinav" onclick="window.switchMode('sinav')">
+      <span class="dock-icon">🏆</span>
+      <span>Sınav</span>
+    </button>
+  </nav>
+
+  <!-- Toast Notification -->
+  <div id="liquid-toast" class="liquid-toast" role="status" aria-live="polite"></div>
+
+  <script src="./course-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
