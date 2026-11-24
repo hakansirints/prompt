@@ -3,7 +3,7 @@
     VALID_LETTERS,
     CATEGORY_META,
     normalizeTr,
-    startsWithLetterTr,
+    validateWordTr,
     getRandomWordForBot,
     getHintForCategory,
     sfx,
@@ -56,6 +56,8 @@ const state = {
   players: [],
   myAnswers: {},
   guestSubmissions: new Map(), // host toplama için
+  roundBaseScores: {},
+  roundOverrides: {},
   lastBreakdown: null
 };
 
@@ -640,26 +642,34 @@ function updateCategoryCardStatus(cat) {
   const val = (state.myAnswers[cat] || '').trim();
   const badge = $(`status-${meta.key}`);
   const hint = $(`hint-${meta.key}`);
+  const res = validateWordTr(val, state.currentLetter, cat);
 
-  if (!val) {
+  if (res.status === 'empty') {
     badge.className = 'cat-status';
     badge.textContent = 'Bekleniyor';
-    hint.textContent = `${state.currentLetter} harfi ile başlamalı`;
-  } else if (startsWithLetterTr(val, state.currentLetter)) {
+    hint.textContent = res.message;
+  } else if (res.status === 'verified') {
     if (!badge.classList.contains('valid')) sfx.pop();
     badge.className = 'cat-status valid';
-    badge.textContent = '✓ Harika!';
-    hint.textContent = `${state.currentLetter} harfi ile başlıyor`;
+    badge.textContent = '✓ Doğru!';
+    hint.textContent = res.message;
+  } else if (res.status === 'unknown') {
+    badge.className = 'cat-status warn';
+    badge.textContent = '? Kontrol';
+    hint.textContent = res.message;
   } else {
     badge.className = 'cat-status invalid';
-    badge.textContent = '✗ Yanlış Harf';
-    hint.textContent = `Dikkat! "${state.currentLetter}" ile başlamalı`;
+    badge.textContent = res.status === 'gibberish' ? '✗ Anlamsız' : '✗ Yanlış Harf';
+    hint.textContent = res.message;
   }
   renderBottomChecklist();
 }
 
 function updateMyLiveProgress() {
-  const validCount = state.categories.filter((cat) => startsWithLetterTr(state.myAnswers[cat], state.currentLetter)).length;
+  const validCount = state.categories.filter((cat) => {
+    const st = validateWordTr(state.myAnswers[cat], state.currentLetter, cat).status;
+    return st === 'verified' || st === 'unknown';
+  }).length;
   const total = state.categories.length;
   const remaining = total - validCount;
 
@@ -707,12 +717,26 @@ function renderBottomChecklist() {
   wrap.innerHTML = '';
   state.categories.forEach((cat) => {
     const meta = CATEGORY_META[cat];
-    const ok = startsWithLetterTr(state.myAnswers[cat], state.currentLetter);
+    const st = validateWordTr(state.myAnswers[cat], state.currentLetter, cat).status;
     const pill = document.createElement('span');
     pill.className = 'pill';
-    pill.style.background = ok ? meta.light : '#F1F5F9';
-    pill.style.color = ok ? meta.dark : '#64748B';
-    pill.textContent = `${ok ? '✓' : '✎'} ${cat}`;
+    if (st === 'verified') {
+      pill.style.background = meta.light;
+      pill.style.color = meta.dark;
+      pill.textContent = `✓ ${cat}`;
+    } else if (st === 'unknown') {
+      pill.style.background = '#FEF3C7';
+      pill.style.color = '#B45309';
+      pill.textContent = `? ${cat}`;
+    } else if (st === 'gibberish' || st === 'wrong_letter') {
+      pill.style.background = '#FFE4E6';
+      pill.style.color = '#BE123C';
+      pill.textContent = `✗ ${cat}`;
+    } else {
+      pill.style.background = '#F1F5F9';
+      pill.style.color = '#64748B';
+      pill.textContent = `✎ ${cat}`;
+    }
     wrap.appendChild(pill);
   });
 }
@@ -739,7 +763,7 @@ function updatePowerupButtons() {
 
 function useHintPowerup() {
   if (state.hintsLeft <= 0) return showToast('İpucu hakkın kalmadı!');
-  const targetCat = state.categories.find((c) => !startsWithLetterTr(state.myAnswers[c], state.currentLetter)) || state.categories[0];
+  const targetCat = state.categories.find((c) => validateWordTr(state.myAnswers[c], state.currentLetter, c).status !== 'verified') || state.categories[0];
   state.hintsLeft -= 1;
   state.mascotTip = getHintForCategory(state.currentLetter, targetCat);
   const tipEl = $('mascot-tip-text');
@@ -775,17 +799,30 @@ function finishRoundAsHost() {
 }
 
 function computeAndShowResultsAsHost() {
-  // Her oyuncunun cevaplarını topla
+  // Her oyuncunun cevaplarını topla ve bu tur öncesi baz puanlarını kaydet
+  state.roundOverrides = {};
+  state.roundBaseScores = {};
   state.players.forEach((p) => {
+    state.roundBaseScores[p.id] = p.score;
     if (p.id === state.myId) {
       p.answers = { ...state.myAnswers };
     } else if (!p.isBot) {
       p.answers = state.guestSubmissions.get(p.id) || {};
     }
-    // Bot cevapları zaten p.answers içinde
   });
+  recalculateAndBroadcastRound(true);
+}
 
-  // Kategori bazlı puanlama: +15 Tek Bilen, +10 Benzersiz, +5 Ortak, 0 Yanlış/Boş
+function isEntryAccepted(playerId, cat, raw) {
+  const key = `${playerId}::${cat}`;
+  const check = validateWordTr(raw, state.currentLetter, cat);
+  if (Object.prototype.hasOwnProperty.call(state.roundOverrides, key)) {
+    return { accepted: state.roundOverrides[key], check, overridden: true };
+  }
+  return { accepted: check.valid, check, overridden: false };
+}
+
+function recalculateAndBroadcastRound(withCelebration) {
   const perPlayerRoundPts = {};
   state.players.forEach((p) => { perPlayerRoundPts[p.id] = 0; });
 
@@ -795,9 +832,9 @@ function computeAndShowResultsAsHost() {
 
     state.players.forEach((p) => {
       const raw = (p.answers?.[cat] || '').trim();
-      const valid = startsWithLetterTr(raw, state.currentLetter);
-      const norm = valid ? normalizeTr(raw) : '';
-      if (valid) {
+      const { accepted } = isEntryAccepted(p.id, cat, raw);
+      const norm = accepted ? normalizeTr(raw) : '';
+      if (accepted) {
         counts[norm] = (counts[norm] || 0) + 1;
         validEntries.push({ playerId: p.id, name: p.name, word: raw, norm });
       }
@@ -805,32 +842,51 @@ function computeAndShowResultsAsHost() {
 
     const entries = state.players.map((p) => {
       const raw = (p.answers?.[cat] || '').trim();
-      const valid = startsWithLetterTr(raw, state.currentLetter);
-      const norm = valid ? normalizeTr(raw) : '';
+      const { accepted, check, overridden } = isEntryAccepted(p.id, cat, raw);
+      const norm = accepted ? normalizeTr(raw) : '';
       let pts = 0;
-      let reason = 'Boş / Yanlış';
+      let reason = 'Boş';
 
-      if (valid) {
+      if (accepted) {
         if (validEntries.length === 1) {
           pts = 15;
-          reason = 'Tek Bilen!';
+          reason = overridden ? 'Onaylandı · Tek!' : 'Tek Bilen!';
         } else if (counts[norm] === 1) {
           pts = 10;
-          reason = 'Benzersiz';
+          reason = overridden ? 'Onaylandı ✓' : 'Benzersiz';
         } else {
           pts = 5;
           reason = 'Ortak';
         }
+      } else if (check.status === 'unknown') {
+        reason = 'Sözlükte yok';
+      } else if (check.status === 'gibberish') {
+        reason = 'Anlamsız';
+      } else if (check.status === 'wrong_letter') {
+        reason = 'Yanlış harf';
+      } else if (overridden) {
+        reason = 'Reddedildi';
       }
+
       perPlayerRoundPts[p.id] += pts;
-      return { playerId: p.id, name: p.name, word: raw, pts, reason };
+      return {
+        playerId: p.id,
+        name: p.name,
+        word: raw,
+        pts,
+        reason,
+        status: check.status,
+        accepted,
+        canOverride: check.status === 'unknown' || check.status === 'verified'
+      };
     });
 
     return { category: cat, entries };
   });
 
   state.players.forEach((p) => {
-    p.score += perPlayerRoundPts[p.id];
+    const base = state.roundBaseScores[p.id] ?? 0;
+    p.score = base + perPlayerRoundPts[p.id];
     p.lastRoundPts = perPlayerRoundPts[p.id];
   });
 
@@ -848,13 +904,15 @@ function computeAndShowResultsAsHost() {
     breakdown: payload
   });
 
-  showPodiumScreen(payload);
+  showPodiumScreen(payload, withCelebration);
 }
 
-function showPodiumScreen(payload) {
+function showPodiumScreen(payload, withCelebration = true) {
   showScreen('podium');
-  sfx.fanfare();
-  spawnConfetti();
+  if (withCelebration) {
+    sfx.fanfare();
+    spawnConfetti();
+  }
 
   const isGameOver = payload.round >= payload.totalRounds;
   const myEntryPts = payload.perPlayerRoundPts?.[state.myId] ?? 0;
@@ -931,22 +989,39 @@ function showPodiumScreen(payload) {
     const ptsBg = myEnt.pts >= 15 ? '#FEF08A' : myEnt.pts === 10 ? '#DCFCE7' : myEnt.pts === 5 ? '#FEF3C7' : '#FFE4E6';
     const ptsFg = myEnt.pts >= 15 ? '#92400E' : myEnt.pts === 10 ? '#15803D' : myEnt.pts === 5 ? '#B45309' : '#BE123C';
 
+    const overrideBtnHtml = (state.isHost && myEnt.canOverride)
+      ? `<button type="button" class="override-btn ${myEnt.accepted ? 'reject' : 'accept'}" data-ov-player="${myEnt.playerId}" data-ov-cat="${row.category}" data-ov-val="${myEnt.accepted ? '0' : '1'}">${myEnt.accepted ? '👎 Reddet' : '👍 Kabul Et'}</button>`
+      : '';
+
     const el = document.createElement('div');
     el.className = 'breakdown-row';
     el.innerHTML = `
       <div class="breakdown-left">
         <span class="cat-badge-fixed" style="background:${meta.light};color:${meta.dark};">${row.category}</span>
         <div>
-          <div style="font-weight:800;font-size:17px;">${myEnt.word || '(Boş bırakıldı)'}</div>
+          <div style="font-weight:800;font-size:15px;">${myEnt.word || '(Boş bırakıldı)'}</div>
           <div style="font-size:12px;font-weight:700;color:#64748B;">${othersText || 'Tek oyuncu'}</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div class="breakdown-right">
         <span style="font-size:12px;font-weight:800;color:#64748B;">${myEnt.reason}</span>
-        <span class="pill" style="background:${ptsBg};color:${ptsFg};font-family:'Fredoka',sans-serif;font-size:15px;">+${myEnt.pts} ⭐</span>
+        ${overrideBtnHtml}
+        <span class="pill" style="background:${ptsBg};color:${ptsFg};font-family:'Fredoka',sans-serif;font-size:14px;">+${myEnt.pts} ⭐</span>
       </div>
     `;
     bList.appendChild(el);
+  });
+
+  // Tur sonu Kabul Et / Reddet butonlarını bağla
+  bList.querySelectorAll('.override-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const pid = btn.dataset.ovPlayer;
+      const cat = btn.dataset.ovCat;
+      const val = btn.dataset.ovVal === '1';
+      state.roundOverrides[`${pid}::${cat}`] = val;
+      sfx.pop();
+      recalculateAndBroadcastRound(false);
+    });
   });
 }
 
