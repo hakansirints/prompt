@@ -1,13 +1,15 @@
-import {
-  VALID_LETTERS,
-  CATEGORY_META,
-  normalizeTr,
-  startsWithLetterTr,
-  getRandomWordForBot,
-  getHintForCategory
-} from './words.js';
-import { sfx } from './sounds.js';
-import { RoomNetwork, generateRoomCode } from './multiplayer.js';
+(function (global) {
+  const {
+    VALID_LETTERS,
+    CATEGORY_META,
+    normalizeTr,
+    startsWithLetterTr,
+    getRandomWordForBot,
+    getHintForCategory,
+    sfx,
+    RoomNetwork,
+    generateRoomCode
+  } = global.ISH;
 
 const AVATAR_OPTIONS = [
   { emoji: '🦉', bg: '#FEF08A', color: '#38BDF8' },
@@ -1151,12 +1153,22 @@ function init() {
     $('net-status').textContent = `🎉 ${invitedCode} odasına davet edildin! "Katıl →" butonuna bas.`;
   } else {
     // PeerJS yüklenince odayı otomatik aç
-    window.addEventListener('load', () => {
+    const startHosting = () => {
       if (state.mode === 'multi') {
         net.hostRoom(state.roomCode);
       }
-    });
+    };
+    if (document.readyState === 'complete') {
+      startHosting();
+    } else {
+      window.addEventListener('load', startHosting);
+    }
   }
 }
 
-init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})(window);

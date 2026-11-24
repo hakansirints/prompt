@@ -1,6 +1,8 @@
 // Çocuk dostu neşeli Web Audio API ses efektleri (dış ses dosyası gerektirmez)
+(function (global) {
+  const ISH = (global.ISH = global.ISH || {});
 
-class SoundFX {
+  class SoundFX {
   constructor() {
     this.muted = false;
     this.ctx = null;
@@ -71,4 +73,5 @@ class SoundFX {
   }
 }
 
-export const sfx = new SoundFX();
+  ISH.sfx = new SoundFX();
+})(window);

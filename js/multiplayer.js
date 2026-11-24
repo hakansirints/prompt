@@ -1,9 +1,10 @@
 // Veritabanısız WebRTC (PeerJS) çok oyunculu oda yöneticisi
 // GitHub Pages üzerinde tamamen statik olarak farklı cihazlar arasında çalışır.
+(function (global) {
+  const ISH = (global.ISH = global.ISH || {});
+  const PEER_PREFIX = 'isimsehir-oyun-2026-';
 
-const PEER_PREFIX = 'isimsehir-oyun-2026-';
-
-export function generateRoomCode() {
+  function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 4; i++) {
@@ -12,7 +13,7 @@ export function generateRoomCode() {
   return code;
 }
 
-export class RoomNetwork {
+  class RoomNetwork {
   constructor(handlers) {
     this.handlers = handlers; // { onStatus, onMessage, onPeerLeft, onError }
     this.peer = null;
@@ -154,8 +155,12 @@ export class RoomNetwork {
     }
   }
 
-  sendTo(peerId, message) {
-    const conn = this.connections.get(peerId);
-    if (conn?.open) conn.send(message);
+    sendTo(peerId, message) {
+      const conn = this.connections.get(peerId);
+      if (conn?.open) conn.send(message);
+    }
   }
-}
+
+  ISH.generateRoomCode = generateRoomCode;
+  ISH.RoomNetwork = RoomNetwork;
+})(window);

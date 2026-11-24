@@ -1,12 +1,14 @@
 // Türkçe İsim Şehir Hayvan kelime bankası, kategori tanımları ve Türkçe normalizasyon yardımcıları
+(function (global) {
+  const ISH = (global.ISH = global.ISH || {});
 
-export const VALID_LETTERS = [
+  const VALID_LETTERS = [
   'A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 'H', 'İ',
   'K', 'L', 'M', 'N', 'O', 'Ö', 'P', 'R', 'S', 'Ş',
   'T', 'U', 'Ü', 'V', 'Y', 'Z'
 ];
 
-export const CATEGORY_META = {
+  const CATEGORY_META = {
   'İsim': {
     key: 'isim', label: 'İsim', color: '#38BDF8', light: '#E0F2FE', dark: '#0369A1', shadow: '#BAE6FD',
     svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#0284C7" stroke-width="2.4"/><path d="M8.5 14.5C9.3 16 10.6 16.8 12 16.8C13.4 16.8 14.7 16 15.5 14.5" stroke="#0284C7" stroke-width="2.4" stroke-linecap="round"/><circle cx="9" cy="10" r="1.3" fill="#0284C7"/><circle cx="15" cy="10" r="1.3" fill="#0284C7"/></svg>`
@@ -37,18 +39,18 @@ export const CATEGORY_META = {
   }
 };
 
-export function normalizeTr(str) {
-  return (str || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('tr-TR');
-}
+  function normalizeTr(str) {
+    return (str || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('tr-TR');
+  }
 
-export function startsWithLetterTr(word, letter) {
-  const w = normalizeTr(word);
-  const l = normalizeTr(letter);
-  return w.length >= 2 && w.startsWith(l);
-}
+  function startsWithLetterTr(word, letter) {
+    const w = normalizeTr(word);
+    const l = normalizeTr(letter);
+    return w.length >= 2 && w.startsWith(l);
+  }
 
-// Zengin çocuk dostu Türkçe kelime bankası (bot cevapları ve Bilge Baykuş ipuçları için)
-export const WORD_BANK = {
+  // Zengin çocuk dostu Türkçe kelime bankası (bot cevapları ve Bilge Baykuş ipuçları için)
+  const WORD_BANK = {
   A: {
     'İsim': ['Ahmet', 'Ali', 'Ayşe', 'Arda', 'Aslı', 'Ada', 'Alp'],
     'Şehir': ['Ankara', 'Adana', 'Antalya', 'Aydın', 'Amasya', 'Afyon'],
@@ -285,21 +287,30 @@ export const WORD_BANK = {
   }
 };
 
-export function getRandomWordForBot(letter, category) {
-  const list = WORD_BANK[letter]?.[category];
-  if (!list || list.length === 0) return '';
-  return list[Math.floor(Math.random() * list.length)];
-}
-
-export function getHintForCategory(letter, category) {
-  const list = WORD_BANK[letter]?.[category];
-  if (!list || list.length === 0) {
-    return `“${letter}” harfi ile başlayan bir ${category.toLowerCase()} düşün!`;
+  function getRandomWordForBot(letter, category) {
+    const list = WORD_BANK[letter]?.[category];
+    if (!list || list.length === 0) return '';
+    return list[Math.floor(Math.random() * list.length)];
   }
-  const sample = list[Math.floor(Math.random() * list.length)];
-  const chars = [...sample];
-  const masked = chars
-    .map((ch, idx) => (idx === 0 || idx === chars.length - 1 || ch === ' ' ? ch : '_'))
-    .join(' ');
-  return `“${letter}” harfli ${category} ipucu (${chars.length} harf): ${masked}`;
-}
+
+  function getHintForCategory(letter, category) {
+    const list = WORD_BANK[letter]?.[category];
+    if (!list || list.length === 0) {
+      return `“${letter}” harfi ile başlayan bir ${category.toLowerCase()} düşün!`;
+    }
+    const sample = list[Math.floor(Math.random() * list.length)];
+    const chars = [...sample];
+    const masked = chars
+      .map((ch, idx) => (idx === 0 || idx === chars.length - 1 || ch === ' ' ? ch : '_'))
+      .join(' ');
+    return `“${letter}” harfli ${category} ipucu (${chars.length} harf): ${masked}`;
+  }
+
+  ISH.VALID_LETTERS = VALID_LETTERS;
+  ISH.CATEGORY_META = CATEGORY_META;
+  ISH.WORD_BANK = WORD_BANK;
+  ISH.normalizeTr = normalizeTr;
+  ISH.startsWithLetterTr = startsWithLetterTr;
+  ISH.getRandomWordForBot = getRandomWordForBot;
+  ISH.getHintForCategory = getHintForCategory;
+})(window);
