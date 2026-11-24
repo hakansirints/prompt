@@ -967,6 +967,66 @@ h1, h2, h3, .font-display {
   flex-wrap: wrap;
 }
 
+.breakdown-row-multi {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 12px;
+}
+
+.breakdown-cat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entry-judge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.entry-judge-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  flex-wrap: wrap;
+}
+.entry-judge-chip.me {
+  background: #EFF6FF;
+  border-color: #7DD3FC;
+}
+.entry-judge-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.entry-player-tag {
+  font-weight: 800;
+  color: #475569;
+}
+.entry-word {
+  font-weight: 800;
+  color: #0F172A;
+}
+.entry-reason {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748B;
+}
+.entry-judge-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .breakdown-left {
   display: flex;
   align-items: center;
