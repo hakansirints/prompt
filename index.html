@@ -7,12 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <script defer src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script defer src="js/words.js?v=6"></script>
-  <script defer src="js/sounds.js?v=6"></script>
-  <script defer src="js/multiplayer.js?v=6"></script>
-  <script defer src="js/app.js?v=6"></script>
+  <script defer src="js/words.js?v=7"></script>
+  <script defer src="js/sounds.js?v=7"></script>
+  <script defer src="js/multiplayer.js?v=7"></script>
+  <script defer src="js/app.js?v=7"></script>
 </head>
 <body>
   <div class="bg-blobs" aria-hidden="true">
@@ -72,8 +72,9 @@
                 <div style="font-size:12px;font-weight:700;color:#78350F;">Bu kodu arkadaşlarına söyle veya linki gönder, sana katılsınlar!</div>
               </div>
               <div class="room-code-actions">
-                <button type="button" id="btn-copy-code" class="btn-soft" style="padding:9px 14px;font-size:13px;">📋 Kodu Kopyala</button>
+                <button type="button" id="btn-copy-code" class="btn-soft" style="padding:8px 12px;font-size:13px;">📋 Kopyala</button>
                 <button type="button" id="btn-share-link" class="btn-3d btn-amber">🔗 Davet Linki</button>
+                <button type="button" id="btn-reset-room" class="btn-soft" style="padding:8px 12px;font-size:13px;" title="Yeni oda kodu aç ve odayı sıfırla">🔄 Odayı Sıfırla</button>
               </div>
             </div>
 
@@ -185,6 +186,8 @@
         </div>
 
         <div class="top-right">
+          <button type="button" id="btn-game-restart" class="icon-btn" title="Oyunu Yeniden Başlat">🔁</button>
+          <button type="button" id="btn-game-lobby" class="icon-btn" title="Lobiye Dön">🏠</button>
           <button type="button" class="icon-btn js-sound-btn" title="Sesi Aç/Kapat">🔊</button>
           <button type="button" class="icon-btn js-rules-btn" title="Oyun Kuralları">❓</button>
           <span id="game-total-score" class="pill pill-amber">⭐ 0 Puan</span>
@@ -305,8 +308,9 @@
           <button type="button" class="emoji-btn" style="width:44px;flex:none;" data-emoji="🏆">🏆</button>
           <button type="button" class="emoji-btn" style="width:44px;flex:none;" data-emoji="🌟">🌟</button>
         </div>
-        <div style="display:flex;gap:12px;align-items:center;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <button type="button" id="btn-back-lobby" class="btn-soft">🏠 Lobiye Dön</button>
+          <button type="button" id="btn-podium-restart" class="btn-soft">🔁 Yeniden Başla</button>
           <button type="button" id="btn-next-round" class="btn-3d btn-sky">🎲 SONRAKİ TURA GEÇ!</button>
         </div>
       </footer>

@@ -708,6 +708,7 @@ function renderGameHeader() {
 
   const me = state.players.find((p) => p.id === state.myId) || state.players[0];
   $('game-total-score').textContent = `⭐ ${me ? me.score : 0} Puan`;
+  $('btn-game-restart').style.display = state.isHost ? 'grid' : 'none';
 
   const dotsWrap = $('game-round-dots');
   dotsWrap.innerHTML = '';
@@ -1088,12 +1089,15 @@ function showPodiumScreen(payload, withCelebration = true) {
     : `Sıradaki: Tur ${payload.round + 1} / ${payload.totalRounds} 🎲`;
 
   const nextBtn = $('btn-next-round');
+  const restartBtn = $('btn-podium-restart');
   if (!state.isHost) {
     nextBtn.disabled = true;
     nextBtn.textContent = '⏳ Kurucu Sonraki Turu Başlatacak...';
+    if (restartBtn) restartBtn.style.display = 'none';
   } else {
     nextBtn.disabled = false;
     nextBtn.textContent = isGameOver ? '🔄 YENİ OYUN BAŞLAT!' : '🎲 SONRAKİ TURA GEÇ!';
+    if (restartBtn) restartBtn.style.display = 'inline-flex';
   }
 
   // Liderlik Podyumu
@@ -1249,6 +1253,28 @@ function bindEvents() {
     }
   });
 
+  // Odayı Sıfırla (Yeni oda kodu + temiz oyuncu listesi & skorlar)
+  $('btn-reset-room').addEventListener('click', () => {
+    sfx.pop();
+    stopRoundTimers();
+    net.destroy();
+    state.peerToPlayerId.clear();
+    state.guestSubmissions.clear();
+    state.roundOverrides = {};
+    state.roundBaseScores = {};
+    state.usedLetters = [];
+    state.currentRound = 0;
+    state.roomCode = generateRoomCode();
+    $('lobby-room-code').textContent = state.roomCode;
+    ensureInitialPlayers();
+    renderLobbyPlayers();
+    updateHostControlsLock();
+    if (state.mode === 'host') {
+      net.hostRoom(state.roomCode);
+    }
+    showToast(`🔄 Oda sıfırlandı! Yeni kod: ${state.roomCode}`);
+  });
+
   // Odaya Katıl & Odadan Ayrıl
   $('btn-join-room').addEventListener('click', async () => {
     const code = $('join-code-input').value.trim().toUpperCase();
@@ -1328,7 +1354,31 @@ function bindEvents() {
     }
   });
 
+  // Oyun içi Yeniden Başla & Lobiye Dön
+  $('btn-game-restart').addEventListener('click', () => {
+    if (!state.isHost) return;
+    sfx.pop();
+    stopRoundTimers();
+    showToast('🔁 Oyun sıfırlanıp yeniden başlatılıyor...');
+    startNewGameAsHost();
+  });
+
+  $('btn-game-lobby').addEventListener('click', () => {
+    sfx.pop();
+    stopRoundTimers();
+    if (state.isHost) net.broadcast({ type: 'back_to_lobby' });
+    showScreen('lobby');
+    renderLobbyPlayers();
+  });
+
   // Podyum aksiyonları
+  $('btn-podium-restart').addEventListener('click', () => {
+    if (!state.isHost) return;
+    sfx.pop();
+    showToast('🔁 Tüm puanlar sıfırlandı, yeni oyun başlıyor!');
+    startNewGameAsHost();
+  });
+
   $('btn-next-round').addEventListener('click', () => {
     sfx.pop();
     if (state.currentRound >= state.totalRounds) {
