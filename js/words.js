@@ -282,6 +282,7 @@
   };
 
   // Hızlı O(1) sözlük kontrolü için normalize edilmiş Set indeksi oluştur
+  const CUSTOM_WORDS_KEY = 'ish_custom_words_v1';
   const DICT_INDEX = {};
   Object.entries(WORD_BANK).forEach(([letter, cats]) => {
     DICT_INDEX[letter] = {};
@@ -289,6 +290,60 @@
       DICT_INDEX[letter][cat] = new Set(words.map(normalizeTr));
     });
   });
+
+  function loadCustomWords() {
+    try {
+      const raw = global.localStorage?.getItem(CUSTOM_WORDS_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      Object.entries(saved).forEach(([letter, cats]) => {
+        if (!DICT_INDEX[letter]) DICT_INDEX[letter] = {};
+        if (!WORD_BANK[letter]) WORD_BANK[letter] = {};
+        Object.entries(cats).forEach(([cat, list]) => {
+          if (!DICT_INDEX[letter][cat]) DICT_INDEX[letter][cat] = new Set();
+          if (!WORD_BANK[letter][cat]) WORD_BANK[letter][cat] = [];
+          (list || []).forEach((w) => {
+            const norm = normalizeTr(w);
+            if (norm && !DICT_INDEX[letter][cat].has(norm)) {
+              DICT_INDEX[letter][cat].add(norm);
+              WORD_BANK[letter][cat].push(w);
+            }
+          });
+        });
+      });
+    } catch (_) {}
+  }
+
+  function addWordToDictionary(letter, category, word) {
+    const clean = (word || '').trim().replace(/\s+/g, ' ');
+    const targetLetter = normalizeTr(letter);
+    const norm = normalizeTr(clean);
+    if (!clean || !targetLetter || !category) return false;
+
+    if (!DICT_INDEX[targetLetter]) DICT_INDEX[targetLetter] = {};
+    if (!DICT_INDEX[targetLetter][category]) DICT_INDEX[targetLetter][category] = new Set();
+    if (!WORD_BANK[targetLetter]) WORD_BANK[targetLetter] = {};
+    if (!WORD_BANK[targetLetter][category]) WORD_BANK[targetLetter][category] = [];
+
+    if (DICT_INDEX[targetLetter][category].has(norm)) return false;
+
+    DICT_INDEX[targetLetter][category].add(norm);
+    WORD_BANK[targetLetter][category].push(clean);
+
+    try {
+      const raw = global.localStorage?.getItem(CUSTOM_WORDS_KEY);
+      const saved = raw ? JSON.parse(raw) : {};
+      if (!saved[targetLetter]) saved[targetLetter] = {};
+      if (!saved[targetLetter][category]) saved[targetLetter][category] = [];
+      if (!saved[targetLetter][category].some((w) => normalizeTr(w) === norm)) {
+        saved[targetLetter][category].push(clean);
+      }
+      global.localStorage?.setItem(CUSTOM_WORDS_KEY, JSON.stringify(saved));
+    } catch (_) {}
+    return true;
+  }
+
+  loadCustomWords();
 
   // Katman 1: Anlamsız kelime / uydurma metin filtresi
   const TR_ONLY_LETTERS_RE = /^[A-ZÇĞİÖŞÜ\s-]+$/;
@@ -367,6 +422,7 @@
   ISH.normalizeTr = normalizeTr;
   ISH.startsWithLetterTr = startsWithLetterTr;
   ISH.validateWordTr = validateWordTr;
+  ISH.addWordToDictionary = addWordToDictionary;
   ISH.getRandomWordForBot = getRandomWordForBot;
   ISH.getHintForCategory = getHintForCategory;
 })(window);

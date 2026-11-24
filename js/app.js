@@ -4,6 +4,7 @@
     CATEGORY_META,
     normalizeTr,
     validateWordTr,
+    addWordToDictionary,
     getRandomWordForBot,
     getHintForCategory,
     sfx,
@@ -191,7 +192,11 @@ function handleNetworkMessage(data, senderPeerId) {
         sfx.pop();
         recalculateAndBroadcastRound(false);
       }
-    } else if (data.type === 'emoji') {
+    } else if (data.type === 'learn_word') {
+    if (data.letter && data.category && data.word) {
+      addWordToDictionary(data.letter, data.category, data.word);
+    }
+  } else if (data.type === 'emoji') {
       spawnFloatingEmoji(data.emoji);
       net.broadcast({ type: 'emoji', emoji: data.emoji });
     }
@@ -245,6 +250,10 @@ function handleNetworkMessage(data, senderPeerId) {
     renderLobbyPlayers();
     updateHostControlsLock();
     showToast(data.reason || 'Oda kurucusu seni odadan çıkardı.');
+  } else if (data.type === 'learn_word') {
+    if (data.letter && data.category && data.word) {
+      addWordToDictionary(data.letter, data.category, data.word);
+    }
   } else if (data.type === 'emoji') {
     spawnFloatingEmoji(data.emoji);
   }
@@ -1194,9 +1203,10 @@ function showPodiumScreen(payload, withCelebration = true) {
       const isMe = ent.playerId === state.myId;
       const ptsBg = ent.pts >= 15 ? '#FEF08A' : ent.pts === 10 ? '#DCFCE7' : ent.pts === 5 ? '#FEF3C7' : '#FFE4E6';
       const ptsFg = ent.pts >= 15 ? '#92400E' : ent.pts === 10 ? '#15803D' : ent.pts === 5 ? '#B45309' : '#BE123C';
-      const canJudge = canManageJudge && ent.word && ent.word.trim().length > 0 && ent.status !== 'wrong_letter';
+      // Sözlükte zaten doğrulanmış kelimelere Kabul/Reddet butonu KOYMA; sadece sözlükte olmayanlara koy
+      const canJudge = canManageJudge && ent.status === 'unknown' && ent.word && ent.word.trim().length > 0;
       const judgeBtn = canJudge
-        ? `<button type="button" class="override-btn ${ent.accepted ? 'reject' : 'accept'}" data-ov-player="${ent.playerId}" data-ov-cat="${row.category}" data-ov-val="${ent.accepted ? '0' : '1'}" title="${ent.name} cevabını ${ent.accepted ? 'reddet' : 'kabul et'}">${ent.accepted ? '👎 Reddet' : '👍 Kabul Et'}</button>`
+        ? `<button type="button" class="override-btn accept" data-ov-player="${ent.playerId}" data-ov-cat="${row.category}" data-ov-word="${ent.word.replace(/"/g, '&quot;')}" data-ov-val="1" title="${ent.word} kelimesini kabul et ve sözlüğe ekle">👍 Kabul Et (+Sözlük)</button>`
         : '';
 
       return `
@@ -1225,17 +1235,22 @@ function showPodiumScreen(payload, withCelebration = true) {
     bList.appendChild(el);
   });
 
-  // Oyun kurucu (yönetici) tüm oyuncuların cevaplarını kabul/reddeder ve anında herkese yansıtır
+  // Oyun kurucu (yönetici) sözlükte olmayan bir kelimeyi kabul edince hem puan verir hem sözlüğe ekler
   if (canManageJudge) {
     bList.querySelectorAll('.override-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const pid = btn.dataset.ovPlayer;
         const cat = btn.dataset.ovCat;
+        const word = btn.dataset.ovWord || '';
         const accepted = btn.dataset.ovVal === '1';
         state.roundOverrides[`${pid}::${cat}`] = accepted;
-        sfx.pop();
+        if (accepted && word) {
+          addWordToDictionary(payload.letter, cat, word);
+          net.broadcast({ type: 'learn_word', letter: payload.letter, category: cat, word });
+          showToast(`📚 "${word}" kabul edildi ve sözlüğe eklendi!`);
+        }
+        sfx.success();
         recalculateAndBroadcastRound(false);
-        showToast(accepted ? '👍 Kelime kabul edildi!' : '👎 Kelime reddedildi!');
       });
     });
   }
