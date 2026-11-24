@@ -234,6 +234,17 @@ function handleNetworkMessage(data, senderPeerId) {
     stopRoundTimers();
     showScreen('lobby');
     renderLobbyPlayers();
+  } else if (data.type === 'kicked') {
+    stopRoundTimers();
+    net.destroy();
+    showScreen('lobby');
+    setLobbyMode('join');
+    $('joined-banner').classList.add('hidden');
+    $('join-form-box').classList.remove('hidden');
+    ensureInitialPlayers();
+    renderLobbyPlayers();
+    updateHostControlsLock();
+    showToast(data.reason || 'Oda kurucusu seni odadan çıkardı.');
   } else if (data.type === 'emoji') {
     spawnFloatingEmoji(data.emoji);
   }
@@ -380,13 +391,40 @@ function renderCategoryToggles() {
   });
 }
 
+function kickOrRemovePlayerAsHost(playerId) {
+  if (!state.isHost || playerId === state.myId) return;
+  const target = state.players.find((p) => p.id === playerId);
+  if (!target) return;
+  sfx.pop();
+
+  if (!target.isBot) {
+    // Bu oyuncuya ait peerId'yi bul ve bağlantıyı kapat
+    for (const [peerId, pid] of state.peerToPlayerId.entries()) {
+      if (pid === playerId) {
+        net.kickPeer(peerId, 'Oda kurucusu seni odadan çıkardı.');
+        state.peerToPlayerId.delete(peerId);
+      }
+    }
+  }
+
+  state.players = state.players.filter((p) => p.id !== playerId);
+  renderLobbyPlayers();
+  renderGamePlayers();
+  syncLobbyToGuests();
+  if (state.phase === 'playing') {
+    net.broadcast({ type: 'players_sync', players: serializePlayers() });
+  }
+  showToast(`${target.name} odadan çıkarıldı.`);
+}
+
 function renderLobbyPlayers() {
   const list = $('lobby-players-list');
   $('lobby-player-count').textContent = `${state.players.length} / 6 Oyuncu`;
   list.innerHTML = '';
 
   state.players.forEach((p) => {
-    const isMe = p.id === state.myId || (!state.isHost && !p.isHost && p.name === state.myName);
+    const isMe = p.id === state.myId;
+    const canKick = state.isHost && !isMe;
     const row = document.createElement('div');
     row.className = `player-pill ${isMe ? 'me' : ''}`;
     row.innerHTML = `
@@ -399,19 +437,14 @@ function renderLobbyPlayers() {
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <span class="player-score-pill">${p.isBot ? 'Bot ✓' : 'Hazır ✓'}</span>
-        ${p.isBot && state.isHost ? `<button type="button" class="icon-btn" style="width:30px;height:30px;font-size:13px;" data-remove-bot="${p.id}" title="Botu çıkar">✕</button>` : ''}
+        ${canKick ? `<button type="button" class="icon-btn" style="width:30px;height:30px;font-size:13px;" data-kick-player="${p.id}" title="${p.name} oyuncusunu odadan çıkar">✕</button>` : ''}
       </div>
     `;
     list.appendChild(row);
   });
 
-  list.querySelectorAll('[data-remove-bot]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      sfx.pop();
-      state.players = state.players.filter((p) => p.id !== btn.dataset.removeBot);
-      renderLobbyPlayers();
-      syncLobbyToGuests();
-    });
+  list.querySelectorAll('[data-kick-player]').forEach((btn) => {
+    btn.addEventListener('click', () => kickOrRemovePlayerAsHost(btn.dataset.kickPlayer));
   });
 }
 
@@ -848,6 +881,7 @@ function renderGamePlayers() {
   list.innerHTML = '';
   state.players.forEach((p) => {
     const isMe = p.id === state.myId;
+    const canKick = state.isHost && !isMe;
     const row = document.createElement('div');
     row.className = `player-pill ${isMe ? 'me' : ''}`;
     row.innerHTML = `
@@ -858,9 +892,16 @@ function renderGamePlayers() {
           <div class="player-status ${p.status?.includes('Hazır') ? 'ready' : ''}">${p.status || 'Yazıyor...'}</div>
         </div>
       </div>
-      <span class="player-score-pill">${p.score} ⭐</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="player-score-pill">${p.score} ⭐</span>
+        ${canKick ? `<button type="button" class="icon-btn" style="width:28px;height:28px;font-size:12px;" data-kick-player="${p.id}" title="${p.name} oyuncusunu odadan çıkar">✕</button>` : ''}
+      </div>
     `;
     list.appendChild(row);
+  });
+
+  list.querySelectorAll('[data-kick-player]').forEach((btn) => {
+    btn.addEventListener('click', () => kickOrRemovePlayerAsHost(btn.dataset.kickPlayer));
   });
 }
 
@@ -1138,10 +1179,10 @@ function showPodiumScreen(payload, withCelebration = true) {
     ? `⚡ Şu An Lider: ${leader.avatar} ${leader.name} (${leader.score} ⭐)`
     : '⚡ Harika Tur!';
 
-  // Cevap & Puan Özeti — Tüm oyuncuların cevaplarını ve (sadece odaya katılan için) Kabul/Reddet butonlarını göster
-  const isJoinedGuest = !state.isHost && net.role === 'guest';
-  $('breakdown-heading').textContent = isJoinedGuest
-    ? `⚖️ ${payload.letter} Harfi Cevaplar (Kabul / Ret Yetkisi Sende!)`
+  // Cevap & Puan Özeti — Yönetici (Oyun Kurucu) tüm oyuncuların cevapları için Kabul / Reddet kararı verir
+  const canManageJudge = state.isHost;
+  $('breakdown-heading').textContent = canManageJudge
+    ? `👑 ${payload.letter} Harfi Cevaplar (Yönetici Onay / Ret)`
     : `📝 ${payload.letter} Harfi Cevap & Puan Özeti`;
   $('round-points-badge').textContent = `Bu Tur: +${myEntryPts} Puan 🚀`;
 
@@ -1153,7 +1194,7 @@ function showPodiumScreen(payload, withCelebration = true) {
       const isMe = ent.playerId === state.myId;
       const ptsBg = ent.pts >= 15 ? '#FEF08A' : ent.pts === 10 ? '#DCFCE7' : ent.pts === 5 ? '#FEF3C7' : '#FFE4E6';
       const ptsFg = ent.pts >= 15 ? '#92400E' : ent.pts === 10 ? '#15803D' : ent.pts === 5 ? '#B45309' : '#BE123C';
-      const canJudge = isJoinedGuest && ent.word && ent.word.trim().length > 0 && ent.status !== 'wrong_letter';
+      const canJudge = canManageJudge && ent.word && ent.word.trim().length > 0 && ent.status !== 'wrong_letter';
       const judgeBtn = canJudge
         ? `<button type="button" class="override-btn ${ent.accepted ? 'reject' : 'accept'}" data-ov-player="${ent.playerId}" data-ov-cat="${row.category}" data-ov-val="${ent.accepted ? '0' : '1'}" title="${ent.name} cevabını ${ent.accepted ? 'reddet' : 'kabul et'}">${ent.accepted ? '👎 Reddet' : '👍 Kabul Et'}</button>`
         : '';
@@ -1184,15 +1225,16 @@ function showPodiumScreen(payload, withCelebration = true) {
     bList.appendChild(el);
   });
 
-  // Sadece odaya katılan (katılımcı) oyuncu tüm oyuncuların (rakipler dahil) cevaplarını kabul/reddedebilir
-  if (isJoinedGuest) {
+  // Oyun kurucu (yönetici) tüm oyuncuların cevaplarını kabul/reddeder ve anında herkese yansıtır
+  if (canManageJudge) {
     bList.querySelectorAll('.override-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const pid = btn.dataset.ovPlayer;
         const cat = btn.dataset.ovCat;
         const accepted = btn.dataset.ovVal === '1';
+        state.roundOverrides[`${pid}::${cat}`] = accepted;
         sfx.pop();
-        net.broadcast({ type: 'override_word', playerId: pid, category: cat, accepted });
+        recalculateAndBroadcastRound(false);
         showToast(accepted ? '👍 Kelime kabul edildi!' : '👎 Kelime reddedildi!');
       });
     });

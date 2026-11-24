@@ -159,6 +159,19 @@
       const conn = this.connections.get(peerId);
       if (conn?.open) conn.send(message);
     }
+
+    kickPeer(peerId, reason) {
+      const conn = this.connections.get(peerId);
+      if (conn) {
+        try {
+          if (conn.open) conn.send({ type: 'kicked', reason });
+        } catch (_) {}
+        setTimeout(() => {
+          try { conn.close(); } catch (_) {}
+          this.connections.delete(peerId);
+        }, 120);
+      }
+    }
   }
 
   ISH.generateRoomCode = generateRoomCode;
