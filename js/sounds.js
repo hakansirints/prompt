@@ -67,6 +67,22 @@
     this._tone(240, 0.14, 'sawtooth', 0.07, 0);
   }
 
+  // Birisi "BİTİRDİM!" dediğinde çalan heyecanlı uyarı sesi
+  panicStart() {
+    this._tone(660, 0.12, 'triangle', 0.14, 0);
+    this._tone(880, 0.12, 'triangle', 0.14, 0.11);
+    this._tone(1046.5, 0.2, 'triangle', 0.15, 0.22);
+  }
+
+  // 10'dan geriye sayarken her saniye yükselen heyecanlı tik sesi
+  panicTick(secLeft) {
+    const freq = 520 + (10 - Math.max(0, Math.min(10, secLeft))) * 45;
+    this._tone(freq, 0.09, 'square', 0.08, 0);
+    if (secLeft <= 3 && secLeft > 0) {
+      this._tone(freq * 1.25, 0.07, 'triangle', 0.09, 0.09);
+    }
+  }
+
   toggleMute() {
     this.muted = !this.muted;
     return this.muted;

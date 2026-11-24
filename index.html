@@ -7,12 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
   <script defer src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script defer src="js/words.js?v=3"></script>
-  <script defer src="js/sounds.js?v=3"></script>
-  <script defer src="js/multiplayer.js?v=3"></script>
-  <script defer src="js/app.js?v=3"></script>
+  <script defer src="js/words.js?v=4"></script>
+  <script defer src="js/sounds.js?v=4"></script>
+  <script defer src="js/multiplayer.js?v=4"></script>
+  <script defer src="js/app.js?v=4"></script>
 </head>
 <body>
   <div class="bg-blobs" aria-hidden="true">
@@ -59,46 +59,72 @@
 
           <div class="card settings-card">
             <div class="mode-tabs">
-              <button type="button" id="mode-multi" class="mode-tab active">👥 Arkadaşlarla Oyna (Oda Kodu)</button>
-              <button type="button" id="mode-solo" class="mode-tab">🤖 Bota Karşı Tek Oyuncu</button>
+              <button type="button" id="mode-host" class="mode-tab active">👑 Oda Kur (Kurucu)</button>
+              <button type="button" id="mode-join" class="mode-tab">🎟️ Odaya Katıl (Misafir)</button>
+              <button type="button" id="mode-solo" class="mode-tab">🤖 Bota Karşı (Tek)</button>
             </div>
 
-            <div id="room-code-strip" class="room-code-strip">
+            <!-- KURUCU PANELİ: Sadece kendi oda kodunu paylaşır -->
+            <div id="host-code-panel" class="room-code-strip">
               <div>
-                <div style="font-size:11px;font-weight:800;color:#B45309;">SENİN ODA KODUN</div>
+                <div style="font-size:11px;font-weight:800;color:#B45309;">👑 SEN ODA KURUCUSUSUN · ODA KODUN</div>
                 <div id="lobby-room-code" class="room-code-big">K7M2</div>
+                <div style="font-size:12px;font-weight:700;color:#78350F;">Bu kodu arkadaşlarına söyle veya linki gönder, sana katılsınlar!</div>
               </div>
               <div class="room-code-actions">
-                <button type="button" id="btn-copy-code" class="btn-soft" style="padding:9px 14px;font-size:14px;">📋 Kopyala</button>
-                <button type="button" id="btn-share-link" class="btn-soft" style="padding:9px 14px;font-size:14px;">🔗 Link</button>
-                <input id="join-code-input" class="code-mini-input" type="text" maxlength="4" placeholder="Kod gir..." />
-                <button type="button" id="btn-join-room" class="btn-3d btn-amber">Katıl →</button>
+                <button type="button" id="btn-copy-code" class="btn-soft" style="padding:9px 14px;font-size:13px;">📋 Kodu Kopyala</button>
+                <button type="button" id="btn-share-link" class="btn-3d btn-amber">🔗 Davet Linki</button>
               </div>
             </div>
+
+            <!-- KATILIMCI PANELİ: Sadece arkadaşının kodunu girer -->
+            <div id="join-code-panel" class="join-strip hidden">
+              <div id="join-form-box" class="join-form-row">
+                <div>
+                  <div style="font-size:11px;font-weight:800;color:#0369A1;">🎟️ ARKADAŞININ ODASINA KATIL</div>
+                  <div style="font-size:13px;font-weight:700;color:#334155;">Oda kurucusundan aldığın 4 haneli kodu buraya yaz:</div>
+                </div>
+                <div class="room-code-actions">
+                  <input id="join-code-input" class="code-mini-input" type="text" maxlength="4" placeholder="Örn: K7M2" />
+                  <button type="button" id="btn-join-room" class="btn-3d btn-sky" style="padding:9px 18px;font-size:14px;">🚪 Odaya Katıl!</button>
+                </div>
+              </div>
+              <div id="joined-banner" class="joined-banner hidden">
+                <div>
+                  <div id="joined-banner-title" style="font-weight:800;font-size:15px;color:#15803D;">✅ K7M2 Odasına Katıldın! (Katılımcı)</div>
+                  <div style="font-size:12px;font-weight:700;color:#166534;">Oda kurucusu oyunu başlattığında ekranın otomatik açılacak.</div>
+                </div>
+                <button type="button" id="btn-leave-room" class="btn-soft" style="padding:8px 12px;font-size:13px;">← Odadan Ayrıl</button>
+              </div>
+            </div>
+
             <div id="net-status" class="net-status">Oda hazırlanıyor...</div>
 
-            <div class="options-row">
-              <div>
-                <div class="opt-group-label">🎯 Tur Sayısı</div>
-                <div id="rounds-chips" class="chip-row">
-                  <button type="button" class="opt-chip" data-rounds="3">3 Tur</button>
-                  <button type="button" class="opt-chip active" data-rounds="5">5 Tur ✓</button>
-                  <button type="button" class="opt-chip" data-rounds="8">8 Tur</button>
+            <div id="lobby-game-settings" class="lobby-settings-wrap">
+              <div class="options-row">
+                <div>
+                  <div class="opt-group-label">🎯 Tur Sayısı</div>
+                  <div id="rounds-chips" class="chip-row">
+                    <button type="button" class="opt-chip" data-rounds="3">3 Tur</button>
+                    <button type="button" class="opt-chip active" data-rounds="5">5 Tur ✓</button>
+                    <button type="button" class="opt-chip" data-rounds="8">8 Tur</button>
+                  </div>
+                </div>
+                <div>
+                  <div class="opt-group-label">⏱ Tur Süresi</div>
+                  <div id="duration-chips" class="chip-row">
+                    <button type="button" class="opt-chip" data-duration="45">45 sn</button>
+                    <button type="button" class="opt-chip active" data-duration="60">60 sn ✓</button>
+                    <button type="button" class="opt-chip" data-duration="90">90 sn</button>
+                    <button type="button" class="opt-chip" data-duration="0">♾️ Süresiz</button>
+                  </div>
                 </div>
               </div>
-              <div>
-                <div class="opt-group-label">⏱ Tur Süresi</div>
-                <div id="duration-chips" class="chip-row">
-                  <button type="button" class="opt-chip" data-duration="45">45 sn</button>
-                  <button type="button" class="opt-chip active" data-duration="60">60 sn ✓</button>
-                  <button type="button" class="opt-chip" data-duration="90">90 sn</button>
-                </div>
-              </div>
-            </div>
 
-            <div>
-              <div class="opt-group-label">📚 Kategoriler (En az 3 tane seçili olmalı)</div>
-              <div id="category-toggles" class="chip-row"></div>
+              <div style="margin-top:10px;">
+                <div class="opt-group-label">📚 Kategoriler (En az 3 tane seçili olmalı)</div>
+                <div id="category-toggles" class="chip-row"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -106,11 +132,15 @@
         <!-- Sağ: Odadaki Oyuncular & Başlat -->
         <div class="lobby-col">
           <div class="card players-card">
-            <div class="section-title" style="margin-bottom:4px;">
+            <div class="section-title" style="margin-bottom:2px;">
               <span>🎉 Odadaki Oyuncular</span>
-              <span id="lobby-player-count" class="pill pill-sky">2 / 6 Oyuncu</span>
+              <span id="lobby-role-pill" class="pill pill-amber">👑 Rolün: Kurucu</span>
             </div>
-            <div id="lobby-players-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+              <span id="lobby-role-hint" style="font-size:12px;font-weight:700;color:#64748B;">Odayı sen yönetiyorsun; ayarları seç ve başlat!</span>
+              <span id="lobby-player-count" class="pill pill-sky">2 / 6</span>
+            </div>
+            <div id="lobby-players-list" style="display:flex;flex-direction:column;gap:8px;"></div>
             <button type="button" id="btn-add-bot" class="btn-dashed">➕ Yeni Bot Arkadaş Ekle</button>
           </div>
 
@@ -172,7 +202,7 @@
           </div>
         </div>
 
-        <div class="timer-card">
+        <div id="timer-card-box" class="timer-card">
           <div class="timer-header">
             <div style="display:flex;align-items:center;gap:10px;">
               <span class="font-display" style="color:#64748B;font-weight:600;">⏱ Kalan Süre</span>

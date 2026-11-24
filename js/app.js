@@ -33,11 +33,11 @@ const state = {
   myId: 'me-' + Math.random().toString(36).slice(2, 8),
   myName: localStorage.getItem('ish_name') || 'Elif',
   myAvatarIdx: Number(localStorage.getItem('ish_avatar') || 0),
-  mode: 'multi', // 'multi' | 'solo'
+  mode: 'host', // 'host' | 'join' | 'solo'
   isHost: true,
   roomCode: generateRoomCode(),
   totalRounds: 5,
-  durationSec: 60,
+  durationSec: 60, // 0 = Süresiz mod
   categories: ['İsim', 'Şehir', 'Hayvan', 'Bitki', 'Eşya'],
 
   // Canlı oyun
@@ -46,6 +46,8 @@ const state = {
   usedLetters: [],
   currentLetter: 'M',
   timeLeft: 60,
+  panicActive: false,
+  panicBy: '',
   timerId: null,
   botTimers: [],
   hintsLeft: 2,
@@ -172,7 +174,8 @@ function handleNetworkMessage(data, senderPeerId) {
     } else if (data.type === 'submit_answers') {
       state.guestSubmissions.set(senderPeerId, data.answers || {});
       if (data.triggerStop && state.phase === 'playing') {
-        finishRoundAsHost();
+        const sender = state.players.find((pl) => pl.id === senderPeerId);
+        triggerFinishOrPanicAsHost(sender ? sender.name : 'Bir oyuncu');
       }
     } else if (data.type === 'emoji') {
       spawnFloatingEmoji(data.emoji);
@@ -204,6 +207,8 @@ function handleNetworkMessage(data, senderPeerId) {
     state.durationSec = data.durationSec;
     state.players = data.players;
     runWheelThenStartRound(data.letter);
+  } else if (data.type === 'panic_countdown') {
+    activatePanicCountdown(data.triggeredBy || 'Bir oyuncu', data.seconds || 10);
   } else if (data.type === 'collect_answers') {
     net.broadcast({ type: 'submit_answers', answers: state.myAnswers, triggerStop: false });
   } else if (data.type === 'round_results') {
@@ -322,7 +327,11 @@ function renderOptionChips() {
     const val = Number(btn.dataset.duration);
     const active = val === state.durationSec;
     btn.classList.toggle('active', active);
-    btn.textContent = active ? `${val} sn ✓` : `${val} sn`;
+    if (val === 0) {
+      btn.textContent = active ? '♾️ Süresiz ✓' : '♾️ Süresiz';
+    } else {
+      btn.textContent = active ? `${val} sn ✓` : `${val} sn`;
+    }
   });
 }
 
@@ -394,17 +403,86 @@ function renderLobbyPlayers() {
 
 function updateHostControlsLock() {
   const startBtn = $('btn-start-game');
-  if (!state.isHost) {
+  const settingsWrap = $('lobby-game-settings');
+  const rolePill = $('lobby-role-pill');
+  const roleHint = $('lobby-role-hint');
+
+  if (state.mode === 'join' && net.role !== 'guest') {
+    startBtn.disabled = true;
+    startBtn.textContent = '🎟️ Önce Bir Oda Kodu Girip Katıl';
+    $('btn-add-bot').style.display = 'none';
+    settingsWrap.classList.add('locked');
+    rolePill.className = 'pill pill-sky';
+    rolePill.textContent = '🎟️ Rolün: Katılımcı';
+    roleHint.textContent = 'Arkadaşının verdiği 4 haneli kodu soldaki kutuya yaz.';
+    $('lobby-mascot-msg').textContent = 'Katılımcı modundasın! Oda kurucusundan aldığın 4 haneli kodu yazıp odaya katıl. 🎟️';
+  } else if (!state.isHost) {
     startBtn.disabled = true;
     startBtn.textContent = '⏳ Oda Kurucusu Başlatmayı Bekliyor...';
     $('btn-add-bot').style.display = 'none';
+    settingsWrap.classList.add('locked');
+    rolePill.className = 'pill pill-mint';
+    rolePill.textContent = '🎟️ Rolün: Katılımcı';
+    roleHint.textContent = `${state.roomCode} odasındasın · Ayarları kurucu yönetir.`;
     $('lobby-mascot-msg').textContent = 'Harika! Odaya bağlandın, kurucu oyunu başlattığında harf çarkı dönecek! 🎡';
+  } else if (state.mode === 'solo') {
+    startBtn.disabled = false;
+    startBtn.textContent = '🚀 OYUNU BAŞLAT!';
+    $('btn-add-bot').style.display = 'block';
+    settingsWrap.classList.remove('locked');
+    rolePill.className = 'pill pill-sky';
+    rolePill.textContent = '🤖 Tek Oyuncu';
+    roleHint.textContent = 'Ayarları seç, istersen bot ekle ve hemen başla!';
+    $('lobby-mascot-msg').textContent = 'Tek oyunculu moddasın! Hazırsan butona bas, harf çarkı dönsün! 🎡';
   } else {
     startBtn.disabled = false;
     startBtn.textContent = '🚀 OYUNU BAŞLAT!';
     $('btn-add-bot').style.display = 'block';
+    settingsWrap.classList.remove('locked');
+    rolePill.className = 'pill pill-amber';
+    rolePill.textContent = '👑 Rolün: Kurucu';
+    roleHint.textContent = 'Odayı sen yönetiyorsun; kodu paylaş ve herkes gelince başlat!';
     $('lobby-mascot-msg').textContent = 'Herkes hazır! Butona bas, harf çarkı dönsün ve eğlence başlasın! 🎡';
   }
+}
+
+function setLobbyMode(mode) {
+  state.mode = mode;
+  $('mode-host').classList.toggle('active', mode === 'host');
+  $('mode-join').classList.toggle('active', mode === 'join');
+  $('mode-solo').classList.toggle('active', mode === 'solo');
+
+  $('host-code-panel').classList.toggle('hidden', mode !== 'host');
+  $('join-code-panel').classList.toggle('hidden', mode !== 'join');
+  $('net-status').style.display = mode === 'solo' ? 'none' : 'block';
+
+  if (mode === 'host') {
+    state.isHost = true;
+    $('joined-banner').classList.add('hidden');
+    $('join-form-box').classList.remove('hidden');
+    ensureInitialPlayers();
+    renderLobbyPlayers();
+    if (net.role !== 'host') {
+      net.hostRoom(state.roomCode);
+    }
+  } else if (mode === 'join') {
+    if (net.role === 'host') {
+      net.destroy();
+    }
+    state.isHost = false;
+    const isConnectedGuest = net.role === 'guest';
+    $('joined-banner').classList.toggle('hidden', !isConnectedGuest);
+    $('join-form-box').classList.toggle('hidden', isConnectedGuest);
+    if (!isConnectedGuest) {
+      $('net-status').textContent = 'Arkadaşının verdiği 4 haneli kodu yazıp "Odaya Katıl!" butonuna bas.';
+    }
+  } else if (mode === 'solo') {
+    state.isHost = true;
+    net.destroy();
+    ensureInitialPlayers();
+    renderLobbyPlayers();
+  }
+  updateHostControlsLock();
 }
 
 // ==================== OYUN BAŞLATMA & HARF ÇARKI ====================
@@ -480,8 +558,15 @@ function runWheelThenStartRound(targetLetter) {
 function beginPlayingRound() {
   stopRoundTimers();
   state.myAnswers = {};
-  state.timeLeft = state.durationSec;
+  state.panicActive = false;
+  state.panicBy = '';
+  state.timeLeft = state.durationSec; // 0 ise süresiz
   state.mascotTip = `“${state.currentLetter}” harfi ile başlayan kelimeleri yaz! Takılırsan İpucu butonuna tıkla 🦉`;
+
+  $('timer-card-box').classList.remove('panic');
+  $('btn-finish-round').textContent = '🛑 BİTİRDİM! (DUR!)';
+  $('speed-bonus-pill').className = 'pill pill-mint';
+  $('speed-bonus-pill').textContent = state.durationSec === 0 ? '♾️ Rahat Süresiz Mod' : '🚀 Süper Hız Bonusu Aktif!';
 
   showScreen('playing');
   renderGameHeader();
@@ -500,11 +585,22 @@ function beginPlayingRound() {
     scheduleBotTyping();
   }
 
-  // Canlı geri sayım
+  // Canlı geri sayım (Süreli modda hemen başlar; Süresiz modda sadece 10 sn geri sayım tetiklenince sayar)
   state.timerId = setInterval(() => {
+    if (state.durationSec === 0 && !state.panicActive) return;
+
     state.timeLeft = Math.max(0, state.timeLeft - 1);
     updateTimerUI();
-    if (state.timeLeft <= 5 && state.timeLeft > 0) sfx.tick();
+
+    if (state.panicActive) {
+      if (state.timeLeft > 0) {
+        sfx.panicTick(state.timeLeft);
+        $('btn-finish-round').textContent = `🚨 Bitiyor: ${state.timeLeft} sn!`;
+      }
+    } else if (state.timeLeft <= 5 && state.timeLeft > 0) {
+      sfx.tick();
+    }
+
     if (state.timeLeft === 0) {
       if (state.isHost) {
         finishRoundAsHost();
@@ -513,6 +609,47 @@ function beginPlayingRound() {
       }
     }
   }, 1000);
+}
+
+function activatePanicCountdown(triggeredByName, seconds = 10) {
+  if (state.phase !== 'playing' || state.panicActive) return;
+  state.panicActive = true;
+  state.panicBy = triggeredByName;
+  state.timeLeft = (state.durationSec > 0 && state.timeLeft > 0)
+    ? Math.min(seconds, state.timeLeft)
+    : seconds;
+
+  sfx.panicStart();
+  $('timer-card-box').classList.add('panic');
+  $('speed-bonus-pill').className = 'pill';
+  $('speed-bonus-pill').style.background = '#FFE4E6';
+  $('speed-bonus-pill').style.color = '#BE123C';
+  $('speed-bonus-pill').textContent = `🚨 ${triggeredByName} BİTİRDİ! Son ${state.timeLeft} sn!`;
+  $('game-encourage-msg').textContent = `🔥 Acele et! ${triggeredByName} bitirdi — 10'dan geriye sayılıyor!`;
+  $('btn-finish-round').textContent = `🚨 Bitiyor: ${state.timeLeft} sn!`;
+  updateTimerUI();
+  showToast(`🚨 ${triggeredByName} "BİTİRDİM!" dedi — Son ${state.timeLeft} saniye!`);
+}
+
+function triggerFinishOrPanicAsHost(triggeredByName) {
+  if (state.phase !== 'playing') return;
+  const hasRemoteGuests = state.players.some((p) => !p.isBot && p.id !== state.myId);
+
+  // Süresiz tek oyunculu modda doğrudan bitir
+  if (state.durationSec === 0 && !hasRemoteGuests) {
+    finishRoundAsHost();
+    return;
+  }
+
+  // Süreli modda (veya arkadaşlarla oynarken) ilk basışta heyecanlı 10 saniye geri sayım başlat!
+  if (!state.panicActive) {
+    const secs = (state.durationSec > 0 && state.timeLeft > 0) ? Math.min(10, state.timeLeft) : 10;
+    net.broadcast({ type: 'panic_countdown', triggeredBy: triggeredByName, seconds: secs });
+    activatePanicCountdown(triggeredByName, secs);
+  } else if (!hasRemoteGuests) {
+    // Tek oyunculuda geri sayım sırasında tekrar basarsa hemen sonuca geçebilsin
+    finishRoundAsHost();
+  }
 }
 
 function stopRoundTimers() {
@@ -742,23 +879,33 @@ function renderBottomChecklist() {
 }
 
 function updateTimerUI() {
+  const clock = $('game-timer-clock');
+  const fill = $('game-timer-fill');
+
+  if (state.durationSec === 0 && !state.panicActive) {
+    clock.textContent = '♾️ Süresiz';
+    clock.classList.remove('urgent');
+    fill.style.width = '100%';
+    fill.style.backgroundColor = '#38BDF8';
+    return;
+  }
+
   const mins = String(Math.floor(state.timeLeft / 60)).padStart(2, '0');
   const secs = String(state.timeLeft % 60).padStart(2, '0');
-  const clock = $('game-timer-clock');
   clock.textContent = `${mins}:${secs}`;
-  clock.classList.toggle('urgent', state.timeLeft <= 10);
+  clock.classList.toggle('urgent', state.panicActive || state.timeLeft <= 10);
 
-  const pct = Math.min(100, (state.timeLeft / state.durationSec) * 100);
-  const fill = $('game-timer-fill');
+  const denom = state.panicActive ? 10 : Math.max(1, state.durationSec);
+  const pct = Math.min(100, (state.timeLeft / denom) * 100);
   fill.style.width = `${pct}%`;
-  fill.style.backgroundColor = state.timeLeft <= 10 ? '#F43F5E' : state.timeLeft <= 20 ? '#F59E0B' : '#2ECC71';
+  fill.style.backgroundColor = (state.panicActive || state.timeLeft <= 10) ? '#F43F5E' : state.timeLeft <= 20 ? '#F59E0B' : '#2ECC71';
 }
 
 function updatePowerupButtons() {
   $('hint-count').textContent = state.hintsLeft;
   $('time-count').textContent = state.timeBoostLeft;
   $('btn-power-hint').disabled = state.hintsLeft <= 0;
-  $('btn-power-time').disabled = state.timeBoostLeft <= 0;
+  $('btn-power-time').disabled = state.timeBoostLeft <= 0 || state.durationSec === 0;
 }
 
 function useHintPowerup() {
@@ -1052,28 +1199,10 @@ function bindEvents() {
     updateMyProfile();
   });
 
-  // Mod geçişi
-  $('mode-multi').addEventListener('click', () => {
-    sfx.pop();
-    state.mode = 'multi';
-    $('mode-multi').classList.add('active');
-    $('mode-solo').classList.remove('active');
-    $('room-code-strip').style.display = 'flex';
-    $('net-status').style.display = 'block';
-    if (net.role === 'offline') net.hostRoom(state.roomCode);
-  });
-
-  $('mode-solo').addEventListener('click', () => {
-    sfx.pop();
-    state.mode = 'solo';
-    state.isHost = true;
-    net.destroy();
-    $('mode-solo').classList.add('active');
-    $('mode-multi').classList.remove('active');
-    $('room-code-strip').style.display = 'none';
-    $('net-status').style.display = 'none';
-    updateHostControlsLock();
-  });
+  // 3 Net Rol/Mod Sekmesi
+  $('mode-host').addEventListener('click', () => { sfx.pop(); setLobbyMode('host'); });
+  $('mode-join').addEventListener('click', () => { sfx.pop(); setLobbyMode('join'); });
+  $('mode-solo').addEventListener('click', () => { sfx.pop(); setLobbyMode('solo'); });
 
   // Oda kodu kopyala & link paylaş
   $('btn-copy-code').addEventListener('click', async () => {
@@ -1097,7 +1226,7 @@ function bindEvents() {
     }
   });
 
-  // Odaya Katıl
+  // Odaya Katıl & Odadan Ayrıl
   $('btn-join-room').addEventListener('click', async () => {
     const code = $('join-code-input').value.trim().toUpperCase();
     if (code.length !== 4) return showToast('Lütfen 4 haneli oda kodunu gir.');
@@ -1107,7 +1236,22 @@ function bindEvents() {
     if (ok) {
       state.roomCode = code;
       $('lobby-room-code').textContent = code;
+      $('joined-banner-title').textContent = `✅ ${code} Odasına Katıldın! (Katılımcı)`;
+      $('join-form-box').classList.add('hidden');
+      $('joined-banner').classList.remove('hidden');
+      updateHostControlsLock();
     }
+  });
+
+  $('btn-leave-room').addEventListener('click', () => {
+    sfx.pop();
+    net.destroy();
+    $('joined-banner').classList.add('hidden');
+    $('join-form-box').classList.remove('hidden');
+    ensureInitialPlayers();
+    renderLobbyPlayers();
+    updateHostControlsLock();
+    showToast('Odadan ayrıldın.');
   });
 
   // Tur sayısı & Süre
@@ -1153,12 +1297,11 @@ function bindEvents() {
   });
 
   $('btn-finish-round').addEventListener('click', () => {
-    sfx.success();
     if (state.isHost) {
-      finishRoundAsHost();
+      triggerFinishOrPanicAsHost(state.myName);
     } else {
       net.broadcast({ type: 'submit_answers', answers: state.myAnswers, triggerStop: true });
-      showToast('🛑 Dur dedin! Sonuçlar hesaplanıyor...');
+      showToast('🛑 Dur dedin! Son 10 saniye başlıyor...');
     }
   });
 
@@ -1220,16 +1363,17 @@ function init() {
 
   $('lobby-room-code').textContent = state.roomCode;
 
-  // URL'de ?oda=XXXX varsa otomatik katılma alanını doldur
+  // URL'de ?oda=XXXX varsa otomatik Katılımcı sekmesinde aç!
   const params = new URLSearchParams(window.location.search);
   const invitedCode = (params.get('oda') || '').trim().toUpperCase();
   if (invitedCode.length === 4) {
+    setLobbyMode('join');
     $('join-code-input').value = invitedCode;
-    $('net-status').textContent = `🎉 ${invitedCode} odasına davet edildin! "Katıl →" butonuna bas.`;
+    $('net-status').textContent = `🎉 ${invitedCode} odasına davet edildin! "🚪 Odaya Katıl!" butonuna bas.`;
   } else {
     // PeerJS yüklenince odayı otomatik aç
     const startHosting = () => {
-      if (state.mode === 'multi') {
+      if (state.mode === 'host') {
         net.hostRoom(state.roomCode);
       }
     };
