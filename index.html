@@ -2,138 +2,313 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="color-scheme" content="light dark" />
-  <meta name="theme-color" content="#060913" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <script>
-    try {
-      document.querySelector('meta[name="color-scheme"]').content = localStorage.getItem("color-scheme") ?? "light dark";
-    } catch (e) {}
-  </script>
-  <title>Prompt Mühendisliği Akademisi — iOS 27 Liquid Glass Etkileşimli Kurs</title>
-  <meta name="description" content="BTK Akademi Prompt Mühendisliği Kursu + Tepkime Arenası, Kimyasal Olay Yeri Uzmanı ve Bir Tepkimenin Üç Yüzü örnekleriyle zenginleştirilmiş iOS 27 Sıvı Cam eğitim platformu." />
-  <link rel="stylesheet" href="./styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İsim Şehir Hayvan — Neşeli Kelime Yarışı</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
 <body>
-  <!-- iOS 27 Ambient Liquid Mesh Background -->
-  <div class="liquid-ambient-stage" aria-hidden="true">
-    <div class="liquid-blob blob-1"></div>
-    <div class="liquid-blob blob-2"></div>
-    <div class="liquid-blob blob-3"></div>
-    <div class="liquid-blob blob-4"></div>
+  <div class="bg-blobs" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
   </div>
 
-  <!-- iOS 27 Dynamic Island Header -->
-  <header class="top-island-bar">
-    <div class="dynamic-island" role="banner">
-      <div class="island-brand" onclick="window.selectModule(0)" title="Başlangıç Adımına Dön">
-        <div class="island-orb" aria-hidden="true">✦</div>
-        <div class="island-title-wrap">
-          <div class="island-title">
-            <span>Prompt Akademisi</span>
-            <span class="ios-badge">iOS 27 Liquid</span>
+  <main class="app-shell">
+    <!-- ==================== 1. LOBİ EKRANI ==================== -->
+    <section id="screen-lobby" class="screen">
+      <header class="card top-bar">
+        <div class="brand-group">
+          <div class="logo-badge" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2.5L14.9 8.4L21.4 9.3L16.7 13.9L17.8 20.4L12 17.3L6.2 20.4L7.3 13.9L2.6 9.3L9.1 8.4L12 2.5Z" fill="#FFFFFF" stroke="#B45309" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
           </div>
-          <span class="island-subtitle">BTK Müfredatı + Tepkime Arenası • Olay Yeri • Üç Yüz</span>
+          <div>
+            <div class="brand-title">İsim Şehir Hayvan</div>
+            <div class="brand-sub">Arkadaşlarınla veya Bota Karşı Oyna!</div>
+          </div>
+        </div>
+
+        <span class="pill pill-mint">🌐 Farklı Cihazlardan Anında Oyna (Kayıt Yok!)</span>
+
+        <div class="top-right">
+          <button type="button" class="icon-btn js-sound-btn" title="Sesi Aç/Kapat">🔊</button>
+          <button type="button" class="icon-btn js-rules-btn" title="Oyun Kuralları">❓</button>
+        </div>
+      </header>
+
+      <div class="lobby-grid">
+        <!-- Sol: Profil & Ayarlar -->
+        <div class="lobby-col">
+          <div class="card profile-card">
+            <div class="section-title">👋 Önce Karakterini ve Adını Seç!</div>
+            <div class="profile-row">
+              <div id="avatar-picker" class="avatar-picker"></div>
+              <input id="player-name-input" class="text-input" type="text" maxlength="16" value="Elif" placeholder="Adını yaz..." />
+            </div>
+          </div>
+
+          <div class="card settings-card">
+            <div class="mode-tabs">
+              <button type="button" id="mode-multi" class="mode-tab active">👥 Arkadaşlarla Oyna (Oda Kodu)</button>
+              <button type="button" id="mode-solo" class="mode-tab">🤖 Bota Karşı Tek Oyuncu</button>
+            </div>
+
+            <div id="room-code-strip" class="room-code-strip">
+              <div>
+                <div style="font-size:11px;font-weight:800;color:#B45309;">SENİN ODA KODUN</div>
+                <div id="lobby-room-code" class="room-code-big">K7M2</div>
+              </div>
+              <div class="room-code-actions">
+                <button type="button" id="btn-copy-code" class="btn-soft" style="padding:9px 14px;font-size:14px;">📋 Kopyala</button>
+                <button type="button" id="btn-share-link" class="btn-soft" style="padding:9px 14px;font-size:14px;">🔗 Link</button>
+                <input id="join-code-input" class="code-mini-input" type="text" maxlength="4" placeholder="Kod gir..." />
+                <button type="button" id="btn-join-room" class="btn-3d btn-amber">Katıl →</button>
+              </div>
+            </div>
+            <div id="net-status" class="net-status">Oda hazırlanıyor...</div>
+
+            <div class="options-row">
+              <div>
+                <div class="opt-group-label">🎯 Tur Sayısı</div>
+                <div id="rounds-chips" class="chip-row">
+                  <button type="button" class="opt-chip" data-rounds="3">3 Tur</button>
+                  <button type="button" class="opt-chip active" data-rounds="5">5 Tur ✓</button>
+                  <button type="button" class="opt-chip" data-rounds="8">8 Tur</button>
+                </div>
+              </div>
+              <div>
+                <div class="opt-group-label">⏱ Tur Süresi</div>
+                <div id="duration-chips" class="chip-row">
+                  <button type="button" class="opt-chip" data-duration="45">45 sn</button>
+                  <button type="button" class="opt-chip active" data-duration="60">60 sn ✓</button>
+                  <button type="button" class="opt-chip" data-duration="90">90 sn</button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="opt-group-label">📚 Kategoriler (En az 3 tane seçili olmalı)</div>
+              <div id="category-toggles" class="chip-row"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sağ: Odadaki Oyuncular & Başlat -->
+        <div class="lobby-col">
+          <div class="card players-card">
+            <div class="section-title" style="margin-bottom:4px;">
+              <span>🎉 Odadaki Oyuncular</span>
+              <span id="lobby-player-count" class="pill pill-sky">2 / 6 Oyuncu</span>
+            </div>
+            <div id="lobby-players-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+            <button type="button" id="btn-add-bot" class="btn-dashed">➕ Yeni Bot Arkadaş Ekle</button>
+          </div>
+
+          <div class="start-card">
+            <div class="mascot-row">
+              <svg width="46" height="46" viewBox="0 0 48 48" fill="none" style="flex-shrink:0;">
+                <circle cx="24" cy="24" r="22" fill="#FDE047"/>
+                <circle cx="17" cy="21" r="6" fill="#FFFFFF" stroke="#B45309" stroke-width="2"/>
+                <circle cx="31" cy="21" r="6" fill="#FFFFFF" stroke="#B45309" stroke-width="2"/>
+                <circle cx="18" cy="21" r="2.5" fill="#1E293B"/>
+                <circle cx="32" cy="21" r="2.5" fill="#1E293B"/>
+                <path d="M21 28L24 32L27 28H21Z" fill="#F97316"/>
+                <path d="M12 12L17 15M36 12L31 15" stroke="#B45309" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+              <div class="mascot-msg" id="lobby-mascot-msg">Herkes hazır! Butona bas, harf çarkı dönsün ve eğlence başlasın! 🎡</div>
+            </div>
+            <button type="button" id="btn-start-game" class="btn-3d btn-mint" style="width:100%;">🚀 OYUNU BAŞLAT!</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. ANA OYUN EKRANI ==================== -->
+    <section id="screen-game" class="screen hidden">
+      <header class="card top-bar">
+        <div class="brand-group">
+          <div class="logo-badge" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2.5L14.9 8.4L21.4 9.3L16.7 13.9L17.8 20.4L12 17.3L6.2 20.4L7.3 13.9L2.6 9.3L9.1 8.4L12 2.5Z" fill="#FFFFFF" stroke="#B45309" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title">İsim Şehir Hayvan</div>
+            <div class="brand-sub">Neşeli Kelime Yarışı</div>
+          </div>
+          <span id="game-room-pill" class="pill pill-sky">ODA: K7M2</span>
+        </div>
+
+        <div class="round-stepper">
+          <span id="game-round-label" class="font-display" style="font-weight:600;font-size:15px;">Tur 1 / 5</span>
+          <div id="game-round-dots" class="round-dots"></div>
+        </div>
+
+        <div class="top-right">
+          <button type="button" class="icon-btn js-sound-btn" title="Sesi Aç/Kapat">🔊</button>
+          <button type="button" class="icon-btn js-rules-btn" title="Oyun Kuralları">❓</button>
+          <span id="game-total-score" class="pill pill-amber">⭐ 0 Puan</span>
+        </div>
+      </header>
+
+      <!-- Hero Etkileşim Şeridi -->
+      <div class="hero-strip">
+        <div class="letter-card">
+          <div id="active-letter-medallion" class="letter-medallion">M</div>
+          <div>
+            <span class="pill" style="background:#F59E0B;color:#FFF;padding:3px 9px;font-size:11px;">AKTİF HARF</span>
+            <div id="active-letter-title" class="font-display" style="font-size:22px;font-weight:700;margin-top:2px;">M ile Başla!</div>
+            <div id="used-letters-label" style="font-size:12px;font-weight:700;color:#92400E;">İlk tur!</div>
+          </div>
+        </div>
+
+        <div class="timer-card">
+          <div class="timer-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="font-display" style="color:#64748B;font-weight:600;">⏱ Kalan Süre</span>
+              <span id="game-timer-clock" class="timer-clock">01:00</span>
+            </div>
+            <span id="speed-bonus-pill" class="pill pill-mint" style="font-size:12px;">🚀 Süper Hız Bonusu Aktif!</span>
+          </div>
+          <div class="timer-track">
+            <div id="game-timer-fill" class="timer-fill"></div>
+          </div>
+          <div id="game-encourage-msg" style="font-size:13px;font-weight:700;color:#475569;">Hadi bakalım, tüm kategorileri doldur! ✨</div>
+        </div>
+
+        <div class="powerups-card">
+          <div class="font-display" style="font-weight:700;font-size:15px;color:#6D28D9;">⚡ Güçlendiriciler</div>
+          <div class="power-row">
+            <button type="button" id="btn-power-hint" class="power-chip">
+              💡 İpucu <span id="hint-count" class="power-count">2</span>
+            </button>
+            <button type="button" id="btn-power-time" class="power-chip sky">
+              ⏰ +15 Sn <span id="time-count" class="power-count">1</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Live Telemetry & Progress Ring -->
-      <div class="island-telemetry" aria-label="Öğrenme İlerlemesi">
-        <div class="ring-wrapper">
-          <progress id="course-progress-ring" value="0" max="100" aria-label="Kurs tamamlanma yüzdesi" class="progress-ring"></progress>
-          <div id="course-progress-text" class="ring-content">0%</div>
+      <!-- Ana Oyun Alanı -->
+      <div class="play-area">
+        <div>
+          <div id="category-cards-grid" class="cards-grid"></div>
+          <div class="combo-banner">
+            <span>🌟 Kimsede olmayan doğru kelime yazarsan <strong>+15 Süper Yıldız</strong> kazanırsın!</span>
+            <span class="pill" style="background:#FFFFFF;color:#EA580C;" id="streak-pill">Seri: 1. Tur 🔥</span>
+          </div>
         </div>
-        <div class="telemetry-pill">
-          <span>⚡</span>
-          <span id="telemetry-xp" class="xp-num">0 XP</span>
+
+        <aside class="card players-card">
+          <div class="section-title" style="margin-bottom:2px;">
+            <span>👥 Arkadaşlar</span>
+            <span id="game-online-pill" class="pill pill-mint" style="font-size:12px;">● 4 Canlı</span>
+          </div>
+          <div id="game-players-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+          <hr style="border:none;border-top:1.5px solid #E2E8F0;margin:4px 0;" />
+          <div class="font-display" style="font-weight:600;font-size:15px;color:#475569;">🎉 Hızlı Tepki Gönder</div>
+          <div class="emoji-bar">
+            <button type="button" class="emoji-btn" data-emoji="👏">👏</button>
+            <button type="button" class="emoji-btn" data-emoji="🎉">🎉</button>
+            <button type="button" class="emoji-btn" data-emoji="🔥">🔥</button>
+            <button type="button" class="emoji-btn" data-emoji="😄">😄</button>
+            <button type="button" class="emoji-btn" data-emoji="⭐">⭐</button>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Alt Aksiyon Barı -->
+      <footer class="card bottom-bar">
+        <div id="bottom-checklist" class="checklist-pills"></div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <button type="button" id="btn-clear-inputs" class="btn-soft">🔄 Temizle</button>
+          <button type="button" id="btn-finish-round" class="btn-3d btn-coral">🛑 BİTİRDİM! (DUR!)</button>
         </div>
-        <div class="telemetry-pill steps-pill">
-          <span>🎯</span>
-          <span id="telemetry-steps" class="streak-num">0/11 Adım</span>
+      </footer>
+    </section>
+
+    <!-- ==================== 3. SKOR & PODYUM EKRANI ==================== -->
+    <section id="screen-podium" class="screen hidden">
+      <header class="card top-bar" style="border-color:#FBBF24;border-width:2.5px;box-shadow:0 6px 0 #FDE68A;">
+        <div class="brand-group">
+          <div class="logo-badge" style="background:#FEF3C7;box-shadow:none;font-size:28px;">🏆</div>
+          <div>
+            <div id="podium-title" class="brand-title">Tur 1 Tamamlandı!</div>
+            <div id="podium-subtitle" class="brand-sub" style="color:#15803D;">Harika kelimeler buldun! 🎉</div>
+          </div>
+        </div>
+        <span id="podium-next-pill" class="pill pill-sky">Sıradaki: Tur 2 / 5 🎲</span>
+      </header>
+
+      <div class="podium-grid">
+        <div class="card podium-card">
+          <div class="section-title" style="margin-bottom:0;">🌟 Liderlik Podyumu</div>
+          <div id="podium-pedestals" class="pedestals"></div>
+          <div id="podium-rest" style="width:100%;display:flex;flex-direction:column;gap:8px;"></div>
+          <div id="podium-award" class="pill pill-amber" style="width:100%;justify-content:center;padding:10px 14px;">⚡ Turun Yıldızı!</div>
+        </div>
+
+        <div class="card breakdown-card">
+          <div class="section-title" style="margin-bottom:4px;">
+            <span id="breakdown-heading">📝 Cevap &amp; Puan Özeti</span>
+            <span id="round-points-badge" class="pill pill-mint">Bu Tur: +0 Puan 🚀</span>
+          </div>
+          <div id="breakdown-list" style="display:flex;flex-direction:column;gap:10px;"></div>
         </div>
       </div>
 
-      <!-- Quick Actions -->
-      <div class="island-actions">
-        <button class="liquid-icon-btn hide-on-mobile" onclick="window.switchMode('studyo')" title="Canlı Prompt Stüdyosu">
-          <span>🧪</span>
-          <span>Stüdyo</span>
-        </button>
-        <button class="liquid-icon-btn hide-on-mobile" onclick="window.switchMode('sozluk')" title="3D Terimler Sözlüğü Kartları">
-          <span>🗂️</span>
-          <span>Sözlük</span>
-        </button>
-        <button class="liquid-icon-btn" onclick="window.toggleThemeMode()" aria-label="Tema görünümünü değiştir" title="Açık / Koyu Sıvı Cam Modu">
-          <span>🌗</span>
-        </button>
-      </div>
+      <footer class="card bottom-bar">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span class="font-display" style="font-weight:600;color:#475569;">Arkadaşlarını Tebrik Et:</span>
+          <button type="button" class="emoji-btn" style="width:44px;flex:none;" data-emoji="🎉">🎉</button>
+          <button type="button" class="emoji-btn" style="width:44px;flex:none;" data-emoji="👏">👏</button>
+          <button type="button" class="emoji-btn" style="width:44px;flex:none;" data-emoji="🏆">🏆</button>
+          <button type="button" class="emoji-btn" style="width:44px;flex:none;" data-emoji="🌟">🌟</button>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <button type="button" id="btn-back-lobby" class="btn-soft">🏠 Lobiye Dön</button>
+          <button type="button" id="btn-next-round" class="btn-3d btn-sky">🎲 SONRAKİ TURA GEÇ!</button>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <!-- Harf Çarkı Overlay -->
+  <div id="wheel-overlay" class="overlay hidden">
+    <div class="modal-box">
+      <div class="font-display" style="font-size:24px;font-weight:700;">🎡 Harf Çarkı Dönüyor!</div>
+      <div id="wheel-letter" class="wheel-letter">A</div>
+      <div id="wheel-sub" style="font-weight:800;color:#64748B;">Hazır ol, birazdan başlıyoruz...</div>
     </div>
-  </header>
-
-  <!-- Mobile Slide-Up Drawer Backdrop -->
-  <div id="mobile-drawer-backdrop" class="mobile-drawer-backdrop" onclick="window.closeMobileDrawer()"></div>
-
-  <!-- Main Workspace Layout -->
-  <div class="app-shell">
-    <!-- Left Sidebar / Mobile Slide-Up Sheet: Step-by-Step Curriculum Map -->
-    <aside id="curriculum-sidebar" class="liquid-glass curriculum-sidebar" aria-label="Eğitim Müfredatı">
-      <div class="sidebar-header">
-        <h2>🧭 Eğitim Haritası (11 Adım)</h2>
-        <button class="drawer-close-btn" onclick="window.closeMobileDrawer()" aria-label="Menüyü kapat">✕</button>
-      </div>
-
-      <!-- Mode Switcher -->
-      <div class="mode-tabs" role="tablist" aria-label="Çalışma Modları">
-        <button class="mode-tab active" data-mode="ders" onclick="window.switchMode('ders')" role="tab">📚 Ders</button>
-        <button class="mode-tab" data-mode="studyo" onclick="window.switchMode('studyo')" role="tab">🧪 Stüdyo</button>
-        <button class="mode-tab" data-mode="sozluk" onclick="window.switchMode('sozluk')" role="tab">🗂️ Sözlük</button>
-        <button class="mode-tab" data-mode="sinav" onclick="window.switchMode('sinav')" role="tab">🏆 Sınav</button>
-      </div>
-
-      <!-- Instant Search -->
-      <div class="search-box">
-        <span class="search-icon" aria-hidden="true">🔍</span>
-        <input type="search" id="sidebar-search" placeholder="Konu, şablon veya proje ara..." aria-label="Modüllerde ara" />
-      </div>
-
-      <!-- 11 Step-by-Step Modules List -->
-      <div id="module-nav-list" class="module-nav-list" role="navigation" aria-label="11 Adımlık Müfredat"></div>
-    </aside>
-
-    <!-- Main Interactive Stage -->
-    <main id="main-stage" class="main-stage" role="main"></main>
   </div>
 
-  <!-- iOS 27 Mobile Bottom Dock Bar (Thumb-Friendly Phone Navigation) -->
-  <nav class="mobile-bottom-dock" aria-label="Mobil Alt Menü">
-    <button class="dock-btn active" data-dock="ders" onclick="window.switchMode('ders')">
-      <span class="dock-icon">📚</span>
-      <span>Ders</span>
-    </button>
-    <button class="dock-btn" data-dock="adimlar" onclick="window.toggleMobileDrawer()">
-      <span class="dock-icon">🧭</span>
-      <span id="mobile-dock-step-label">Adım 1/11</span>
-    </button>
-    <button class="dock-btn" data-dock="studyo" onclick="window.switchMode('studyo')">
-      <span class="dock-icon">🧪</span>
-      <span>Stüdyo</span>
-    </button>
-    <button class="dock-btn" data-dock="sozluk" onclick="window.switchMode('sozluk')">
-      <span class="dock-icon">🗂️</span>
-      <span>Sözlük</span>
-    </button>
-    <button class="dock-btn" data-dock="sinav" onclick="window.switchMode('sinav')">
-      <span class="dock-icon">🏆</span>
-      <span>Sınav</span>
-    </button>
-  </nav>
+  <!-- Kurallar Modalı -->
+  <div id="rules-overlay" class="overlay hidden">
+    <div class="modal-box" style="text-align:left;align-items:stretch;">
+      <div class="section-title" style="margin-bottom:0;">
+        <span>📖 Nasıl Oynanır?</span>
+        <button type="button" id="btn-close-rules" class="icon-btn">✕</button>
+      </div>
+      <ul style="padding-left:20px;display:flex;flex-direction:column;gap:8px;font-weight:700;color:#475569;font-size:14px;">
+        <li>Her turda çarktan rastgele bir <strong>Türkçe harf</strong> seçilir.</li>
+        <li>Süre dolmadan tüm kategorilere o harfle başlayan kelimeler yaz.</li>
+        <li><strong>+15 puan:</strong> O kategoride doğru yazabilen <em>tek oyuncu</em> sensen!</li>
+        <li><strong>+10 puan:</strong> Diğer oyuncularla <em>farklı</em> doğru kelime yazdıysan.</li>
+        <li><strong>+5 puan:</strong> Başka bir oyuncuyla <em>aynı</em> kelimeyi yazdıysan.</li>
+        <li><strong>Farklı cihazlarda oyna:</strong> Oda kodunu veya linkini arkadaşlarınla paylaş, veritabanı olmadan anında bağlanın!</li>
+      </ul>
+      <button type="button" id="btn-rules-ok" class="btn-3d btn-mint" style="width:100%;">Anladım, Hadi Oynayalım! 🚀</button>
+    </div>
+  </div>
 
-  <!-- Toast Notification -->
-  <div id="liquid-toast" class="liquid-toast" role="status" aria-live="polite"></div>
+  <div id="toast" class="toast hidden"></div>
 
-  <script src="./course-data.js"></script>
-  <script src="./app.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
