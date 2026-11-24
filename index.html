@@ -7,12 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <script defer src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script defer src="js/words.js?v=4"></script>
-  <script defer src="js/sounds.js?v=4"></script>
-  <script defer src="js/multiplayer.js?v=4"></script>
-  <script defer src="js/app.js?v=4"></script>
+  <script defer src="js/words.js?v=5"></script>
+  <script defer src="js/sounds.js?v=5"></script>
+  <script defer src="js/multiplayer.js?v=5"></script>
+  <script defer src="js/app.js?v=5"></script>
 </head>
 <body>
   <div class="bg-blobs" aria-hidden="true">
@@ -322,21 +322,145 @@
     </div>
   </div>
 
-  <!-- Kurallar Modalı -->
+  <!-- Görsel & Detaylı Yardım Modalı -->
   <div id="rules-overlay" class="overlay hidden">
-    <div class="modal-box" style="text-align:left;align-items:stretch;">
-      <div class="section-title" style="margin-bottom:0;">
-        <span>📖 Nasıl Oynanır?</span>
-        <button type="button" id="btn-close-rules" class="icon-btn">✕</button>
+    <div class="modal-box help-modal">
+      <div class="section-title" style="margin-bottom:0;width:100%;">
+        <span>📖 Oyun Rehberi &amp; Kurallar</span>
+        <button type="button" id="btn-close-rules" class="icon-btn" aria-label="Kapat">✕</button>
       </div>
-      <ul style="padding-left:20px;display:flex;flex-direction:column;gap:8px;font-weight:700;color:#475569;font-size:14px;">
-        <li>Her turda çarktan rastgele bir <strong>Türkçe harf</strong> seçilir.</li>
-        <li>Süre dolmadan tüm kategorilere o harfle başlayan kelimeler yaz.</li>
-        <li><strong>+15 puan:</strong> O kategoride doğru yazabilen <em>tek oyuncu</em> sensen!</li>
-        <li><strong>+10 puan:</strong> Diğer oyuncularla <em>farklı</em> doğru kelime yazdıysan.</li>
-        <li><strong>+5 puan:</strong> Başka bir oyuncuyla <em>aynı</em> kelimeyi yazdıysan.</li>
-        <li><strong>Farklı cihazlarda oyna:</strong> Oda kodunu veya linkini arkadaşlarınla paylaş, veritabanı olmadan anında bağlanın!</li>
-      </ul>
+
+      <!-- Yardım Sekmeleri -->
+      <div class="help-tabs" role="tablist">
+        <button type="button" class="help-tab active" data-help-tab="roles">👑 Roller</button>
+        <button type="button" class="help-tab" data-help-tab="settings">⚙️ Ayarlar &amp; Güçler</button>
+        <button type="button" class="help-tab" data-help-tab="scoring">⭐ Puanlama</button>
+      </div>
+
+      <!-- SEKME 1: ROLLER -->
+      <div id="help-panel-roles" class="help-panel">
+        <div class="help-cards-grid">
+          <div class="help-card" style="background:#FFFBEB;border-color:#F59E0B;">
+            <div class="help-card-head">
+              <span class="help-icon" style="background:#FEF08A;">👑</span>
+              <div>
+                <div class="font-display" style="font-weight:700;font-size:16px;color:#92400E;">Oda Kurucu</div>
+                <div class="help-sub">Oyunu yöneten kişi</div>
+              </div>
+            </div>
+            <ul class="help-list">
+              <li><strong>Oda Kur</strong> sekmesinde sana özel 4 haneli kod açılır.</li>
+              <li>Kodu veya <strong>🔗 Davet Linkini</strong> arkadaşlarına gönder.</li>
+              <li>Tur sayısını, süreyi ve kategorileri sen seçersin.</li>
+              <li>Herkes gelince <strong>🚀 OYUNU BAŞLAT!</strong> butonuna basarsın.</li>
+            </ul>
+          </div>
+
+          <div class="help-card" style="background:#F0F9FF;border-color:#38BDF8;">
+            <div class="help-card-head">
+              <span class="help-icon" style="background:#BAE6FD;">🎟️</span>
+              <div>
+                <div class="font-display" style="font-weight:700;font-size:16px;color:#0369A1;">Katılımcı (Misafir)</div>
+                <div class="help-sub">Kod ile katılan oyuncu</div>
+              </div>
+            </div>
+            <ul class="help-list">
+              <li><strong>Odaya Katıl</strong> sekmesine geç ve kurucunun verdiği 4 haneli kodu yaz.</li>
+              <li>Davet linkine tıkladıysan kod kendiliğinden dolar!</li>
+              <li>Ayar yapmana gerek yok — kurucu başlatınca oyun otomatik açılır.</li>
+            </ul>
+          </div>
+
+          <div class="help-card" style="background:#F5F3FF;border-color:#A78BFA;">
+            <div class="help-card-head">
+              <span class="help-icon" style="background:#DDD6FE;">🤖</span>
+              <div>
+                <div class="font-display" style="font-weight:700;font-size:16px;color:#6D28D9;">Tek Oyuncu (Bot)</div>
+                <div class="help-sub">İstediğin an pratik yap</div>
+              </div>
+            </div>
+            <ul class="help-list">
+              <li>Oda kodu olmadan tek başına hemen oynayabilirsin.</li>
+              <li>Robo-Bot, Bilge Tilki ve Hızlı Panda sana eşlik eder.</li>
+              <li>İstersen arkadaşlarınla oynarken de odaya bot ekleyebilirsin!</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEKME 2: AYARLAR & GÜÇLER -->
+      <div id="help-panel-settings" class="help-panel hidden">
+        <div class="help-cards-grid two-col">
+          <div class="help-card" style="background:#F8FAFC;border-color:#CBD5E1;">
+            <div class="help-card-head">
+              <span class="help-icon" style="background:#E0F2FE;">🎯</span>
+              <div class="font-display" style="font-weight:700;font-size:15px;">Tur Sayısı &amp; Kategoriler</div>
+            </div>
+            <p class="help-desc"><strong>3, 5 veya 8 tur</strong> seçebilirsin. Her turda farklı bir Türkçe harf gelir. En az 3 kategori seçili olmalıdır (İsim, Şehir, Hayvan, Bitki, Eşya, Ülke, Meslek).</p>
+          </div>
+
+          <div class="help-card" style="background:#F0FDF4;border-color:#4ADE80;">
+            <div class="help-card-head">
+              <span class="help-icon" style="background:#DCFCE7;">♾️</span>
+              <div class="font-display" style="font-weight:700;font-size:15px;color:#15803D;">Süreli &amp; Süresiz Mod</div>
+            </div>
+            <p class="help-desc"><strong>45 / 60 / 90 sn</strong> ile yarışabilir veya <strong>♾️ Süresiz</strong> seçerek zaman baskısı olmadan rahatça kelimeler bulabilirsin.</p>
+          </div>
+
+          <div class="help-card" style="background:#FFF1F2;border-color:#FDA4AF;">
+            <div class="help-card-head">
+              <span class="help-icon" style="background:#FFE4E6;">🚨</span>
+              <div class="font-display" style="font-weight:700;font-size:15px;color:#BE123C;">10 Saniye Son Geri Sayım</div>
+            </div>
+            <p class="help-desc">Süreli modda (veya arkadaşlarla oynarken) birisi <strong>🛑 BİTİRDİM!</strong> dediğinde heyecanlı uyarı sesi çalar ve <strong>10'dan geriye sayarak</strong> turu bitirir!</p>
+          </div>
+
+          <div class="help-card" style="background:#FFFBEB;border-color:#FBBF24;">
+            <div class="help-card-head">
+              <span class="help-icon" style="background:#FEF08A;">⚡</span>
+              <div class="font-display" style="font-weight:700;font-size:15px;color:#92400E;">Güçlendiriciler &amp; Maskot</div>
+            </div>
+            <p class="help-desc"><strong>💡 İpucu (2 hak):</strong> Bilge Baykuş eksik kategorin için harf ipucu verir.<br/><strong>⏰ +15 Sn (1 hak):</strong> Süreli modda ekstra 15 saniye kazandırır!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEKME 3: PUANLAMA & DOĞRULAMA -->
+      <div id="help-panel-scoring" class="help-panel hidden">
+        <div class="score-legend-grid">
+          <div class="score-tile" style="background:#FEF9C3;border-color:#F59E0B;">
+            <div class="font-display" style="font-size:22px;font-weight:700;color:#92400E;">+15 🌟</div>
+            <div style="font-weight:800;font-size:13px;">Tek Bilen</div>
+            <div class="help-sub">O kategoride tek doğru yazan sensen!</div>
+          </div>
+          <div class="score-tile" style="background:#DCFCE7;border-color:#4ADE80;">
+            <div class="font-display" style="font-size:22px;font-weight:700;color:#15803D;">+10 ⭐</div>
+            <div style="font-weight:800;font-size:13px;">Benzersiz</div>
+            <div class="help-sub">Diğerlerinden farklı doğru kelime</div>
+          </div>
+          <div class="score-tile" style="background:#FFEDD5;border-color:#FB923C;">
+            <div class="font-display" style="font-size:22px;font-weight:700;color:#C2410C;">+5 ⭐</div>
+            <div style="font-weight:800;font-size:13px;">Ortak Kelime</div>
+            <div class="help-sub">Başkasıyla aynı kelimeyi yazdıysan</div>
+          </div>
+          <div class="score-tile" style="background:#FFE4E6;border-color:#FDA4AF;">
+            <div class="font-display" style="font-size:22px;font-weight:700;color:#BE123C;">0 ✗</div>
+            <div style="font-weight:800;font-size:13px;">Geçersiz / Boş</div>
+            <div class="help-sub">Yanlış harf, boş veya anlamsız kelime</div>
+          </div>
+        </div>
+
+        <div class="help-card" style="background:#F8FAFC;border-color:#CBD5E1;margin-top:10px;">
+          <div class="font-display" style="font-weight:700;font-size:14px;margin-bottom:6px;">🔎 Akıllı Kelime Kontrolü Nasıl Çalışır?</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+            <span class="cat-status valid">✓ Doğru!</span>
+            <span class="cat-status warn">? Kontrol</span>
+            <span class="cat-status invalid">✗ Anlamsız</span>
+          </div>
+          <p class="help-desc">Sözlükteki kelimeler otomatik onaylanır. Uydurma kelimeler (örn. <em>Mzzzz</em>) engellenir. Sözlükte olmayan ama gerçekten doğru bir kelime yazdıysan tur sonunda kurucu <strong>👍 Kabul Et</strong> ile puanını verebilir!</p>
+        </div>
+      </div>
+
       <button type="button" id="btn-rules-ok" class="btn-3d btn-mint" style="width:100%;">Anladım, Hadi Oynayalım! 🚀</button>
     </div>
   </div>

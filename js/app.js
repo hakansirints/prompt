@@ -1349,6 +1349,21 @@ function bindEvents() {
   });
   $('btn-close-rules').addEventListener('click', () => $('rules-overlay').classList.add('hidden'));
   $('btn-rules-ok').addEventListener('click', () => $('rules-overlay').classList.add('hidden'));
+  $('rules-overlay').addEventListener('click', (e) => {
+    if (e.target === $('rules-overlay')) $('rules-overlay').classList.add('hidden');
+  });
+
+  // Yardım modalı sekmeleri
+  document.querySelectorAll('.help-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      sfx.pop();
+      const target = btn.dataset.helpTab;
+      document.querySelectorAll('.help-tab').forEach((b) => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.help-panel').forEach((p) => {
+        p.classList.toggle('hidden', p.id !== `help-panel-${target}`);
+      });
+    });
+  });
 }
 
 // ==================== BAŞLATMA ====================
